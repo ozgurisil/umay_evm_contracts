@@ -11,13 +11,13 @@ def users():
 
 @pytest.fixture
 def test_register(users):
-    tx = users.register('test-user', 123, 1, {'from': accounts[1]})
-    assert users.users(accounts[1]) == ('test-user', 123, 1, 2)
+    tx = users.register('test-user', 123, 1, 10, {'from': accounts[1]})
+    assert users.users(accounts[1]) == ('test-user', 123, 1, 2, 10)
     assert tx.events[0] == {'userName': 'test-user'}
 
 
 def test_set_status(users):
-    tx = users.register('test-user', 123, 1, {'from': accounts[1]})
+    tx = users.register('test-user', 123, 1, 10, {'from': accounts[1]})
     # import pdb; pdb.set_trace()
     assert users.users(accounts[1]).dict()['status'] == 2
     tx = users.setStatus(0, {'from': accounts[1]})

@@ -18,13 +18,14 @@ contract Users {
         uint birthDate;
         genders gender;
         statuses status;
+        uint fee;
     }
     event RegisterUser(string userName);
     event SetStatus(address wallet, string userName, statuses status);
     mapping (address => User) public users;
 
-    function register(string calldata userName, uint birthDate, genders gender) public {
-        users[msg.sender] = User(userName, birthDate, gender, statuses.unknown);
+    function register(string calldata userName, uint birthDate, genders gender, uint fee) public {
+        users[msg.sender] = User(userName, birthDate, gender, statuses.unknown, fee);
         emit RegisterUser(userName);
     }
 
