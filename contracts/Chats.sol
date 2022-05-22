@@ -2,8 +2,12 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "../interfaces/IUsers.sol";
 
-contract Chats {
+
+contract Chats is Ownable {
+    address usersContract;
     enum Statuses {
         pending,
         started,
@@ -16,29 +20,36 @@ contract Chats {
         address callee;
         uint startDateTime;
         uint endDateTime;
+        uint fee;
         Statuses status;
     }
-    event ChatInit(bytes32 id, address caller, address callee, address sender);
+    event ChatInit(bytes32 id, address caller, address callee, uint fee, address sender);
     event ChatStatusChange(bytes32 id, Statuses status, uint startDateTime, uint EndDateTime, address sender);
     mapping (bytes32 => Chat) private chatsMapping;  // Emulating many-to-many relationship between users with a surrogate PK
     Chat[] private chatsArray;
+
+    function setUsersContractAddress (address _address) public onlyOwner {
+        usersContract = _address;
+    }
 
     function getChatByID(bytes32 _id) public view returns (Chat memory) {
         return chatsMapping[_id];
     }
 
     function startChat(address _caller) public returns (bytes32) {
+        uint fee = IUsers(usersContract).getUserFee(msg.sender);
         Chat memory chat = Chat(
             keccak256(abi.encodePacked(msg.sender, _caller, block.timestamp)),
             _caller,
             msg.sender,
             0,
             0,
+            fee,
             Statuses.pending
         );
         chatsArray.push(chat);
         chatsMapping[chat.id] = chat;
-        emit ChatInit(chat.id, chat.caller, chat.callee, msg.sender);
+        emit ChatInit(chat.id, chat.caller, chat.callee, chat.fee, msg.sender);
         return chat.id;
     }
 
