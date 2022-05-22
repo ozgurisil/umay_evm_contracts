@@ -1,4 +1,3 @@
-from turtle import pd
 import pytest
 
 from brownie import Users, accounts
@@ -9,7 +8,6 @@ def users():
     return accounts[0].deploy(Users)
 
 
-@pytest.fixture
 def test_register(users):
     tx = users.register('test-user', 123, 1, 10, {'from': accounts[1]})
     assert users.users(accounts[1]) == ('test-user', 123, 1, 2, 10)
