@@ -1,14 +1,19 @@
 import pytest
 
 from brownie import Users, Chats, accounts
+from brownie.network.state import Chain
+from brownie.test import given, strategy
+
+
+chain = Chain()
 
 
 @pytest.fixture(scope='module')
 def users():
     users = accounts[0].deploy(Users)
-    users.register('test-user-1', 123, 1, 100, {'from': accounts[1]})
-    users.register('test-user-2', 123, 1, 200, {'from': accounts[2]})
-    users.register('test-user-3', 123, 1, 300, {'from': accounts[3]})
+    users.register('test-user-1', 123, 1, 100 * 10 ** 18, {'from': accounts[1]})
+    users.register('test-user-2', 123, 1, 200 * 10 ** 18, {'from': accounts[2]})
+    users.register('test-user-3', 123, 1, 300 * 10 ** 18, {'from': accounts[3]})
     return users
 
 
@@ -24,8 +29,8 @@ def test_start_chat(users, chats):
     chat = chats.getChatByID(tx.return_value)
     assert chat[1] == accounts[2]
     assert chat[2] == accounts[1]
-    assert chat[5] == 100
-    assert chat[6] == 0  # Pending
+    assert chat[5] == 100 * 10 ** 18
+    assert chat[7] == 0  # Pending
     event = tx.events['ChatInit']
     assert event['caller'] == accounts[2]
     assert event['callee'] == accounts[1]
@@ -38,8 +43,8 @@ def test_confirm_chat(users, chats):
     tx = chats.getChatByID(chat_id)
     assert tx[1] == accounts[2]
     assert tx[2] == accounts[1]
-    assert tx[5] == 100
-    assert tx[6] == 1  # Started
+    assert tx[5] == 100 * 10 ** 18
+    assert tx[7] == 1  # Started
 
 
 def test_finish_chat(users, chats):
@@ -48,5 +53,16 @@ def test_finish_chat(users, chats):
     chats.confirmChat(chat_id, {'from': accounts[2]})
     tx = chats.finishChat(chat_id, {'from': accounts[1]})
     tx = chats.getChatByID(chat_id)
-    assert tx[5] == 100
-    assert tx[6] == 2 # Finished
+    assert tx[5] == 100 * 10 ** 18
+    assert tx[7] == 2 # Finished
+
+
+@given(value=strategy('uint', min_value=900, max_value=3600))
+def test_unclaimed_fee(users,  chats, value):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chat_id = tx.return_value
+    chats.confirmChat(chat_id, {'from': accounts[2]})
+    chain.sleep(value)
+    chain.mine()
+    tx = chats.getUnclaimedFee(chat_id)
+    assert 100 * value / 3600 * .999 < tx / 10 ** 18 < 100 * value / 3600 * 1.001

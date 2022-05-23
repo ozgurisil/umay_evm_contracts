@@ -21,6 +21,7 @@ contract Chats is Ownable {
         uint startDateTime;
         uint endDateTime;
         uint fee;
+        uint lastFeeTimestamp;
         Statuses status;
     }
     event ChatInit(bytes32 id, address caller, address callee, uint fee, address sender);
@@ -45,6 +46,7 @@ contract Chats is Ownable {
             0,
             0,
             fee,
+            0,
             Statuses.pending
         );
         chatsArray.push(chat);
@@ -70,5 +72,19 @@ contract Chats is Ownable {
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
         chat = chatsMapping[_id];
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
+    }
+
+    function getUnclaimedFee(bytes32 _id) public view returns (uint) {
+        Chat storage chat = chatsMapping[_id];
+        uint start;
+        uint end;
+        if (chat.endDateTime > 0) {
+            end = block.timestamp > chat.endDateTime ? chat.endDateTime : block.timestamp;
+        } else {
+            end = block.timestamp;
+        }
+        start = chat.lastFeeTimestamp > 0 ? chat.lastFeeTimestamp : chat.startDateTime;
+        uint feePerSecond = chat.fee / 3600;
+        return feePerSecond * (end - start);
     }
 }
