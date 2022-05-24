@@ -1,6 +1,6 @@
 import pytest
 
-from brownie import Users, Chats, accounts
+from brownie import Users, Chats, accounts, reverts
 from brownie.network.state import Chain
 from brownie.test import given, strategy
 
@@ -47,6 +47,17 @@ def test_confirm_chat(users, chats):
     assert tx[7] == 1  # Started
 
 
+# Workaround for this bug: https://github.com/eth-brownie/brownie/issues/918
+def test_fail_confirm_chat(users, chats):
+    @given(value=strategy('address', exclude=accounts[2]))
+    def run(users, chats, value):
+        tx = chats.startChat(accounts[2], {'from': accounts[1]})
+        chat_id = tx.return_value
+        with reverts():
+            tx = chats.confirmChat(chat_id, {'from': value})
+    run(users, chats)
+
+
 def test_finish_chat(users, chats):
     tx = chats.startChat(accounts[2], {'from': accounts[1]})
     chat_id = tx.return_value
@@ -55,6 +66,18 @@ def test_finish_chat(users, chats):
     tx = chats.getChatByID(chat_id)
     assert tx[5] == 100 * 10 ** 18
     assert tx[7] == 2 # Finished
+
+
+# Workaround for this bug: https://github.com/eth-brownie/brownie/issues/918
+def test_fail_to_finish_chat(users, chats):
+    @given(value=strategy('address', exclude=[accounts[1], accounts[2]]))
+    def run(users, chats, value):
+        tx = chats.startChat(accounts[2], {'from': accounts[1]})
+        chat_id = tx.return_value
+        chats.confirmChat(chat_id, {'from': accounts[2]})
+        with reverts():
+            tx = chats.finishChat(chat_id, {'from': value})
+    run(users, chats)
 
 
 @given(value=strategy('uint', min_value=900, max_value=3600))
