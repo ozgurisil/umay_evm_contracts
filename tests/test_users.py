@@ -10,7 +10,7 @@ def users():
 
 def test_register(users):
     tx = users.register('test-user', 123, 1, 10, {'from': accounts[1]})
-    assert users.users(accounts[1]) == ('test-user', 123, 1, 2, 10)
+    assert users.users(accounts[1]) == ('test-user', 123, 1, 2, 10, 0, 0)
     assert tx.events[0] == {'userName': 'test-user'}
 
 

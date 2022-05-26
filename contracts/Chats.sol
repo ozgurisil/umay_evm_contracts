@@ -8,7 +8,7 @@ import "../interfaces/IUsers.sol";
 
 
 contract Chats is Ownable {
-    address usersContract;
+    address public usersContract;
     address public protocolToken;
     enum Statuses {
         pending,
@@ -67,8 +67,8 @@ contract Chats is Ownable {
         chat.status = Statuses.started;
         chat.startDateTime = block.timestamp;
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, 0, msg.sender);
-        IERC20 token = IERC20(protocolToken);
-        token.transferFrom(chat.caller, address(this), chat.fee);
+        IUsers users = IUsers(usersContract);
+        users.blockDeposit(msg.sender, chat.fee);
     }
 
     function finishChat(bytes32 _id) public {
@@ -100,8 +100,7 @@ contract Chats is Ownable {
         uint feeToClaim = getUnclaimedFee(_id);
         Chat storage chat = chatsMapping[_id];
         require(msg.sender == chat.callee, 'You cannot claim the fee');
-        IERC20 token = IERC20(protocolToken);
-        token.transfer(chat.callee, feeToClaim);
+        IUsers(usersContract).claim(msg.sender, feeToClaim);
         return feeToClaim;
     }
 }

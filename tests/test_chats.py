@@ -31,8 +31,14 @@ def chats(users, token):
     chats = accounts[0].deploy(Chats)
     chats.setUsersContractAddress(users.address)
     chats.setTokenAddress(token.address)
-    token.approve(chats.address, 10000 * 10 ** 18, {'from': accounts[1]})
-    token.approve(chats.address, 10000 * 10 ** 18, {'from': accounts[2]})
+    users.setTokenAddress(token.address)
+    users.setChatsAddress(chats.address)
+    token.approve(users.address, 10000 * 10 ** 18, {'from': accounts[1]})
+    token.approve(users.address, 10000 * 10 ** 18, {'from': accounts[2]})
+    # users.deposit(250 * 10 ** 18, {'from': accounts[0]})
+    users.deposit(250 * 10 ** 18, {'from': accounts[1]})
+    users.deposit(250 * 10 ** 18, {'from': accounts[2]})
+    assert token.balanceOf(users.address) == 500 * 10 ** 18
     return chats
 
 
@@ -57,7 +63,9 @@ def test_confirm_chat(users, chats, token):
     assert tx[2] == accounts[1]
     assert tx[5] == 100 * 10 ** 18
     assert tx[7] == 1  # Started
-    assert token.balanceOf(chats.address) == 100 * 10 ** 18
+    # import pdb; pdb.set_trace()
+    assert users.getUserByAddress(accounts[1])[6] == 0
+    assert users.getUserByAddress(accounts[2])[6] == 100 * 10 ** 18
 
 
 # Workaround for this bug: https://github.com/eth-brownie/brownie/issues/918
@@ -105,6 +113,9 @@ def test_unclaimed_fee(users,  chats, value):
 
 
 def test_claim_fee(users, chats, token):
+    assert token.balanceOf(users.address) / 10 ** 18 == 500
+    assert token.balanceOf(accounts[1]) / 10 ** 18 == 999750
+    assert token.balanceOf(accounts[2]) / 10 ** 18 == 999750
     tx = chats.startChat(accounts[2], {'from': accounts[1]})
     chat_id = tx.return_value
     chats.confirmChat(chat_id, {'from': accounts[2]})
@@ -113,5 +124,6 @@ def test_claim_fee(users, chats, token):
     tx1 = chats.getUnclaimedFee(chat_id)
     tx2 = chats.claimFee(chat_id, {'from': accounts[1]})
     # import pdb; pdb.set_trace()
-    assert token.balanceOf(accounts[1]) / 10 ** 18 == 1000100
-    assert token.balanceOf(accounts[2]) / 10 ** 18 == 999900
+    assert token.balanceOf(accounts[1]) / 10 ** 18 == 999850
+    assert token.balanceOf(accounts[2]) / 10 ** 18 == 999750
+    assert token.balanceOf(users.address) / 10 ** 18 == 400
