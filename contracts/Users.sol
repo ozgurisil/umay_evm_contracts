@@ -34,4 +34,8 @@ contract Users {
         users[msg.sender].status = status;
         emit SetStatus(msg.sender, users[msg.sender].userName, users[msg.sender].status);
     }
+
+    function getUserFee(address _wallet) public view returns (uint) {
+        return users[_wallet].fee;
+    }
 }
