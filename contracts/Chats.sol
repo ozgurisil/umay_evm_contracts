@@ -3,11 +3,13 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IUsers.sol";
 
 
 contract Chats is Ownable {
     address usersContract;
+    address public protocolToken;
     enum Statuses {
         pending,
         started,
@@ -31,6 +33,10 @@ contract Chats is Ownable {
 
     function setUsersContractAddress (address _address) public onlyOwner {
         usersContract = _address;
+    }
+
+    function setTokenAddress(address _address) public onlyOwner {
+        protocolToken = _address;
     }
 
     function getChatByID(bytes32 _id) public view returns (Chat memory) {
@@ -61,6 +67,8 @@ contract Chats is Ownable {
         chat.status = Statuses.started;
         chat.startDateTime = block.timestamp;
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, 0, msg.sender);
+        IERC20 token = IERC20(protocolToken);
+        token.transferFrom(chat.caller, address(this), chat.fee);
     }
 
     function finishChat(bytes32 _id) public {
@@ -86,5 +94,14 @@ contract Chats is Ownable {
         start = chat.lastFeeTimestamp > 0 ? chat.lastFeeTimestamp : chat.startDateTime;
         uint feePerSecond = chat.fee / 3600;
         return feePerSecond * (end - start);
+    }
+
+    function claimFee(bytes32 _id) public returns (uint) {
+        uint feeToClaim = getUnclaimedFee(_id);
+        Chat storage chat = chatsMapping[_id];
+        require(msg.sender == chat.callee, 'You cannot claim the fee');
+        IERC20 token = IERC20(protocolToken);
+        token.transfer(chat.callee, feeToClaim);
+        return feeToClaim;
     }
 }

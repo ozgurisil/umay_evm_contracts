@@ -1,6 +1,7 @@
+from turtle import pd
 import pytest
 
-from brownie import Users, Chats, accounts, reverts
+from brownie import Users, Chats, ChatToken, accounts, reverts
 from brownie.network.state import Chain
 from brownie.test import given, strategy
 
@@ -18,9 +19,20 @@ def users():
 
 
 @pytest.fixture(scope='module')
-def chats(users):
+def token(users):
+    token = accounts[0].deploy(ChatToken)
+    token.transfer(accounts[1], 1000000 * 10 ** 18, {'from': accounts[0]})
+    token.transfer(accounts[2], 1000000 * 10 ** 18, {'from': accounts[0]})
+    return token
+
+
+@pytest.fixture(scope='module')
+def chats(users, token):
     chats = accounts[0].deploy(Chats)
     chats.setUsersContractAddress(users.address)
+    chats.setTokenAddress(token.address)
+    token.approve(chats.address, 10000 * 10 ** 18, {'from': accounts[1]})
+    token.approve(chats.address, 10000 * 10 ** 18, {'from': accounts[2]})
     return chats
 
 
@@ -36,7 +48,7 @@ def test_start_chat(users, chats):
     assert event['callee'] == accounts[1]
 
 
-def test_confirm_chat(users, chats):
+def test_confirm_chat(users, chats, token):
     tx = chats.startChat(accounts[2], {'from': accounts[1]})
     chat_id = tx.return_value
     tx = chats.confirmChat(chat_id, {'from': accounts[2]})
@@ -45,6 +57,7 @@ def test_confirm_chat(users, chats):
     assert tx[2] == accounts[1]
     assert tx[5] == 100 * 10 ** 18
     assert tx[7] == 1  # Started
+    assert token.balanceOf(chats.address) == 100 * 10 ** 18
 
 
 # Workaround for this bug: https://github.com/eth-brownie/brownie/issues/918
@@ -89,3 +102,16 @@ def test_unclaimed_fee(users,  chats, value):
     chain.mine()
     tx = chats.getUnclaimedFee(chat_id)
     assert 100 * value / 3600 * .999 < tx / 10 ** 18 < 100 * value / 3600 * 1.001
+
+
+def test_claim_fee(users, chats, token):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chat_id = tx.return_value
+    chats.confirmChat(chat_id, {'from': accounts[2]})
+    chain.sleep(3600)
+    chain.mine()
+    tx1 = chats.getUnclaimedFee(chat_id)
+    tx2 = chats.claimFee(chat_id, {'from': accounts[1]})
+    # import pdb; pdb.set_trace()
+    assert token.balanceOf(accounts[1]) / 10 ** 18 == 1000100
+    assert token.balanceOf(accounts[2]) / 10 ** 18 == 999900
