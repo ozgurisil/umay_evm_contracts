@@ -77,7 +77,7 @@ contract Users is Ownable{
         require(users[msg.sender].depositBalance - users[msg.sender].blockedAmount >= _amount, 'Not enough balance');
         IERC20 token = IERC20(protocolTokenContract);
         token.transfer(msg.sender, _amount);
-        users[msg.sender].depositBalance += _amount;
+        users[msg.sender].depositBalance -= _amount;
         emit UserWithdrawal(msg.sender, _amount, users[msg.sender].depositBalance);
     }
 
