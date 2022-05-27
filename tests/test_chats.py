@@ -121,9 +121,25 @@ def test_claim_fee(users, chats, token):
     chats.confirmChat(chat_id, {'from': accounts[2]})
     chain.sleep(3600)
     chain.mine()
-    tx1 = chats.getUnclaimedFee(chat_id)
-    tx2 = chats.claimFee(chat_id, {'from': accounts[1]})
-    # import pdb; pdb.set_trace()
+    with reverts():
+        chats.claimFee(chat_id, {'from': accounts[1]})
+    chats.finishChat(chat_id, {'from': accounts[1]})
+    tx = chats.claimFee(chat_id, {'from': accounts[1]})
+    assert tx.events['ChatStatusChange']['status'] == 4  # feeClaimed
     assert token.balanceOf(accounts[1]) / 10 ** 18 == 999850
     assert token.balanceOf(accounts[2]) / 10 ** 18 == 999750
     assert token.balanceOf(users.address) / 10 ** 18 == 400
+
+
+def test_unblock_deposit(users, chats, token):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chat_id = tx.return_value
+    chats.confirmChat(chat_id, {'from': accounts[2]})
+    chain.sleep(1800)  # Half of the blocked deposit will be available to unblock
+    chain.mine()
+    with reverts():
+        chats.unblockDeposit(chat_id, {'from': accounts[1]})
+    chats.finishChat(chat_id, {'from': accounts[1]})
+    assert users.getUserByAddress(accounts[2])[6] == 100 * 10 ** 18
+    tx = chats.unblockDeposit(chat_id, {'from': accounts[1]})
+    assert users.getUserByAddress(accounts[2])[6] == 0

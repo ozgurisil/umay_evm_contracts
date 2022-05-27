@@ -86,6 +86,12 @@ contract Users is Ownable{
         users[_address].blockedAmount += _amount;
     }
 
+    function unblockDeposit(address _address) onlyBy (chatsContract) public returns (uint) {
+        uint blockedAmount = users[_address].blockedAmount;
+        users[_address].blockedAmount = 0;
+        return blockedAmount;
+    }
+
     function claim(address _address, uint _amount) onlyBy(chatsContract) public {
         IERC20 token = IERC20(protocolTokenContract);
         token.transfer(_address, _amount);

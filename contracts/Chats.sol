@@ -14,7 +14,8 @@ contract Chats is Ownable {
         pending,
         started,
         finished,
-        canceled
+        canceled,
+        feeClaimed
     }
     struct Chat {
         bytes32 id;  // TODO: Redundant field?
@@ -99,8 +100,17 @@ contract Chats is Ownable {
     function claimFee(bytes32 _id) public returns (uint) {
         uint feeToClaim = getUnclaimedFee(_id);
         Chat storage chat = chatsMapping[_id];
-        require(msg.sender == chat.callee, 'You cannot claim the fee');
-        IUsers(usersContract).claim(msg.sender, feeToClaim);
+        require(chat.status == Statuses.finished, 'Chat needs to be finished first');
+        IUsers(usersContract).claim(chat.callee, feeToClaim);
+        chat.status = Statuses.feeClaimed;
+        emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
         return feeToClaim;
+    }
+
+    function unblockDeposit(bytes32 _id) public returns (uint) {
+        Chat storage chat = chatsMapping[_id];
+        require (chat.status == Statuses.finished || chat.status == Statuses.feeClaimed, "You can't unblock an unfinished chat");  // TODO: Canceled?
+        if (chat.status == Statuses.finished) claimFee(_id);
+        return IUsers(usersContract).unblockDeposit(chat.caller);
     }
 }
