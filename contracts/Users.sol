@@ -34,6 +34,8 @@ contract Users is Ownable{
     }
     event RegisterUser(string userName);
     event SetStatus(address wallet, string userName, statuses status);
+    event UserDeposit(address _address, uint _amount, uint _balance);
+    event UserWithdrawal(address _address, uint _amount, uint _balance);
     mapping (address => User) public users;
 
     function getUserByAddress(address _address) public view returns (User memory) {
@@ -68,6 +70,7 @@ contract Users is Ownable{
         require(token.balanceOf(msg.sender) >= _amount, 'Not enought balance');
         token.transferFrom(msg.sender, address(this), _amount);
         users[msg.sender].depositBalance += _amount;
+        emit UserDeposit(msg.sender, _amount, users[msg.sender].depositBalance);
     }
 
     function withdraw(uint _amount) public {
@@ -75,6 +78,7 @@ contract Users is Ownable{
         IERC20 token = IERC20(protocolTokenContract);
         token.transfer(msg.sender, _amount);
         users[msg.sender].depositBalance += _amount;
+        emit UserWithdrawal(msg.sender, _amount, users[msg.sender].depositBalance);
     }
 
     function blockDeposit(address _address, uint _amount) onlyBy(chatsContract) public {
