@@ -143,3 +143,20 @@ def test_unblock_deposit(users, chats, token):
     assert users.getUserByAddress(accounts[2])[6] == 100 * 10 ** 18
     tx = chats.unblockDeposit(chat_id, {'from': accounts[1]})
     assert users.getUserByAddress(accounts[2])[6] == 0
+
+
+def test_extend_chat(users, chats, token):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chat_id = tx.return_value
+    chats.confirmChat(chat_id, {'from': accounts[2]})
+    assert users.getUserByAddress(accounts[2])[6] == 100 * 10 ** 18
+    chain.sleep(3200)
+    chain.mine()
+    tx = chats.getUnclaimedFee(chat_id)
+    assert abs(chats.getUnclaimedFee(chat_id) / 1e18 - 88.888) <= 0.001
+    tx = chats.extendChat(chat_id, {'from': accounts[2]})
+    assert 'ChatExtended' in tx.events
+    assert users.getUserByAddress(accounts[2])[6] == 200 * 10 ** 18
+    chain.sleep(3200)
+    chain.mine()
+    assert abs(chats.getUnclaimedFee(chat_id) / 1e18 - 177.777) <= 0.001

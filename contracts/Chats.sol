@@ -29,6 +29,7 @@ contract Chats is Ownable {
     }
     event ChatInit(bytes32 id, address caller, address callee, uint fee, address sender);
     event ChatStatusChange(bytes32 id, Statuses status, uint startDateTime, uint EndDateTime, address sender);
+    event ChatExtended(bytes32 id);
     mapping (bytes32 => Chat) private chatsMapping;  // Emulating many-to-many relationship between users with a surrogate PK
     Chat[] private chatsArray;
 
@@ -81,6 +82,14 @@ contract Chats is Ownable {
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
         chat = chatsMapping[_id];
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
+    }
+
+    function extendChat(bytes32 _id) public {
+        Chat storage chat = chatsMapping[_id];
+        require(msg.sender == chat.caller || msg.sender == chat.callee, 'You cannot extend the chat');
+        IUsers users = IUsers(usersContract);
+        users.blockDeposit(msg.sender, chat.fee);
+        emit ChatExtended(_id);
     }
 
     function getUnclaimedFee(bytes32 _id) public view returns (uint) {
