@@ -59,6 +59,8 @@ contract Chats is Ownable {
         );
         chatsArray.push(chat);
         chatsMapping[chat.id] = chat;
+        IUsers users = IUsers(usersContract);
+        users.setChatId(msg.sender, _caller, chat.id);
         emit ChatInit(chat.id, chat.caller, chat.callee, chat.fee, msg.sender);
         return chat.id;
     }
@@ -79,6 +81,8 @@ contract Chats is Ownable {
         require(msg.sender == chat.caller || msg.sender == chat.callee, 'You cannot finish the chat');
         chat.status = Statuses.finished;
         chat.endDateTime = block.timestamp;
+        IUsers users = IUsers(usersContract);
+        users.setChatId(chat.caller, chat.callee, '');
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
         chat = chatsMapping[_id];
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);

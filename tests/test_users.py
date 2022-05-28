@@ -12,11 +12,11 @@ def isolate(fn_isolation):
 def users(isolate):
     users = accounts[0].deploy(Users)
     users.register('test-user-1', 123, 1, 100 * 10 ** 18, {'from': accounts[1]})
-    assert users.getUserByAddress(accounts[1]) == ('test-user-1', 123, 1, 2, 100 * 10 ** 18, 0, 0)
+    assert users.getUserByAddress(accounts[1]) == ('test-user-1', 123, 1, 2, 100 * 10 ** 18, 0, 0, '0x0')
     users.register('test-user-2', 123, 1, 200 * 10 ** 18, {'from': accounts[2]})
-    assert users.getUserByAddress(accounts[2]) == ('test-user-2', 123, 1, 2, 200 * 10 ** 18, 0, 0)
+    assert users.getUserByAddress(accounts[2]) == ('test-user-2', 123, 1, 2, 200 * 10 ** 18, 0, 0, '0x0')
     users.register('test-user-3', 123, 1, 300 * 10 ** 18, {'from': accounts[3]})
-    assert users.getUserByAddress(accounts[3]) == ('test-user-3', 123, 1, 2, 300 * 10 ** 18, 0, 0)
+    assert users.getUserByAddress(accounts[3]) == ('test-user-3', 123, 1, 2, 300 * 10 ** 18, 0, 0, '0x0')
     return users
 
 

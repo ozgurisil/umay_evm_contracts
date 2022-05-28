@@ -31,6 +31,7 @@ contract Users is Ownable{
         uint fee;
         uint depositBalance;
         uint blockedAmount;
+        bytes32 currentChatId;
     }
     event RegisterUser(string userName);
     event SetStatus(address wallet, string userName, statuses status);
@@ -51,7 +52,7 @@ contract Users is Ownable{
     }
 
     function register(string calldata userName, uint birthDate, genders gender, uint fee) public {
-        users[msg.sender] = User(userName, birthDate, gender, statuses.unknown, fee, 0, 0);
+        users[msg.sender] = User(userName, birthDate, gender, statuses.unknown, fee, 0, 0, '');
         emit RegisterUser(userName);
     }
 
@@ -59,6 +60,11 @@ contract Users is Ownable{
         // User storage user = users[msg.sender]; -- this is expensive. converting it to memory makes a copy!
         users[msg.sender].status = status;
         emit SetStatus(msg.sender, users[msg.sender].userName, users[msg.sender].status);
+    }
+
+    function setChatId(address _caller, address _callee, bytes32 _id) public {
+        users[_caller].currentChatId = _id;
+        users[_callee].currentChatId = _id;
     }
 
     function getUserFee(address _wallet) public view returns (uint) {
