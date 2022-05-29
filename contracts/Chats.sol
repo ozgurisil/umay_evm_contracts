@@ -46,6 +46,8 @@ contract Chats is Ownable {
     }
 
     function startChat(address _caller) public returns (bytes32) {
+        IUsers users = IUsers(usersContract);
+        require(users.getUserByAddress(msg.sender).currentChatId == '' && users.getUserByAddress(_caller).currentChatId == '', 'Cannot start a chat');
         uint fee = IUsers(usersContract).getUserFee(msg.sender);
         Chat memory chat = Chat(
             keccak256(abi.encodePacked(msg.sender, _caller, block.timestamp)),

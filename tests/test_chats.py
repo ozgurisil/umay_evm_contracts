@@ -159,3 +159,12 @@ def test_extend_chat(users, chats, token):
     chain.sleep(3200)
     chain.mine()
     assert abs(chats.getUnclaimedFee(chat_id) / 1e18 - 177.777) <= 0.001
+
+
+def test_require_users_not_on_a_call(users, chats):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chat_id = tx.return_value
+    chats.confirmChat(chat_id, {'from': accounts[2]})
+    with reverts():
+        chats.startChat(accounts[2], {'from': accounts[3]})
+        chats.startChat(accounts[1], {'from': accounts[3]})
