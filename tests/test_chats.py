@@ -62,6 +62,7 @@ def test_confirm_chat(users, chats, token):
     assert tx[2] == accounts[1]
     assert tx[5] == 100 * 10 ** 18
     assert tx[7] == 1  # Started
+    # Blocked amounts
     assert users.getUserByAddress(accounts[1])[6] == 0
     assert users.getUserByAddress(accounts[2])[6] == 100 * 10 ** 18
 
