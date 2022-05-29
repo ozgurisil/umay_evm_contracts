@@ -57,7 +57,6 @@ contract Users is Ownable{
     }
 
     function setStatus(statuses status) public {
-        // User storage user = users[msg.sender]; -- this is expensive. converting it to memory makes a copy!
         users[msg.sender].status = status;
         emit SetStatus(msg.sender, users[msg.sender].userName, users[msg.sender].status);
     }
