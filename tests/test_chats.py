@@ -8,6 +8,11 @@ from brownie.test import given, strategy
 chain = Chain()
 
 
+@pytest.fixture(scope="function", autouse=True)
+def isolate(fn_isolation):
+    pass
+
+
 @pytest.fixture(scope='module')
 def users():
     users = accounts[0].deploy(Users)
