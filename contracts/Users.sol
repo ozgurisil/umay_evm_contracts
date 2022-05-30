@@ -18,23 +18,23 @@ contract Users is Ownable{
         male,
         female
     }
-    enum statuses {
+    enum Statuses {
+        notRegistered,
         available,
-        busy,
-        unknown
+        notAvailable
     }
     struct User {
         string userName;
         uint birthDate;
         genders gender;
-        statuses status;
+        Statuses status;
         uint fee;
         uint depositBalance;
         uint blockedAmount;
         bytes32 currentChatId;
     }
     event RegisterUser(string userName);
-    event SetStatus(address wallet, string userName, statuses status);
+    event SetStatus(address wallet, string userName, Statuses status);
     event UserDeposit(address _address, uint _amount, uint _balance);
     event UserWithdrawal(address _address, uint _amount, uint _balance);
     mapping (address => User) public users;
@@ -52,11 +52,12 @@ contract Users is Ownable{
     }
 
     function register(string calldata userName, uint birthDate, genders gender, uint fee) public {
-        users[msg.sender] = User(userName, birthDate, gender, statuses.unknown, fee, 0, 0, '');
+        require(users[msg.sender].status == Statuses.notRegistered, 'Already registered');
+        users[msg.sender] = User(userName, birthDate, gender, Statuses.available, fee, 0, 0, '');
         emit RegisterUser(userName);
     }
 
-    function setStatus(statuses status) public {
+    function setStatus(Statuses status) public {
         users[msg.sender].status = status;
         emit SetStatus(msg.sender, users[msg.sender].userName, users[msg.sender].status);
     }
