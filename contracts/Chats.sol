@@ -88,7 +88,7 @@ contract Chats is Ownable {
 
     function extendChat(bytes32 _id) public {
         Chat storage chat = chatsMapping[_id];
-        require(msg.sender == chat.caller || msg.sender == chat.callee, 'You cannot extend the chat');
+        require(msg.sender == chat.caller, 'You cannot extend the chat');
         IUsers users = IUsers(usersContract);
         users.blockDeposit(msg.sender, chat.fee);
         emit ChatExtended(_id);
