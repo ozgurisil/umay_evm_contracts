@@ -72,6 +72,14 @@ def test_confirm_chat(users, chats, token):
     assert users.getUserByAddress(accounts[2])[6] == 100 * 10 ** 18
 
 
+def test_reject_chat(users, chats, token):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chat_id = tx.return_value
+    tx = chats.rejectChat(chat_id, {'from': accounts[2]})
+    tx = chats.getChatByID(chat_id)
+    assert tx[0] == '0x0'
+
+
 # Workaround for this bug: https://github.com/eth-brownie/brownie/issues/918
 def test_fail_confirm_chat(users, chats):
     @given(value=strategy('address', exclude=accounts[2]))

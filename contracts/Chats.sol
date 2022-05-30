@@ -76,6 +76,14 @@ contract Chats is Ownable {
         users.blockDeposit(msg.sender, chat.fee);
     }
 
+    function rejectChat(bytes32 _id) public {
+        Chat storage chat = chatsMapping[_id];
+        require(msg.sender == chat.caller, 'You cannot confirm the chat');
+        chat.status = Statuses.canceled;
+        emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, 0, msg.sender);
+        delete chatsMapping[_id];
+    }
+
     function finishChat(bytes32 _id) public {
         Chat storage chat = chatsMapping[_id];
         require(msg.sender == chat.caller || msg.sender == chat.callee, 'You cannot finish the chat');
