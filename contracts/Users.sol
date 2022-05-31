@@ -65,7 +65,7 @@ contract Users is Ownable, ReentrancyGuard{
         emit SetStatus(msg.sender, users[msg.sender].userName, users[msg.sender].status);
     }
 
-    function setChatId(address _caller, address _callee, bytes32 _id) public {
+    function setChatId(address _caller, address _callee, bytes32 _id) onlyBy(chatsContract) public {
         users[_caller].currentChatId = _id;
         users[_callee].currentChatId = _id;
     }
