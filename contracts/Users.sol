@@ -4,9 +4,11 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 contract Users is Ownable{
+    using SafeERC20 for IERC20;
     modifier onlyBy (address _address) {
         require(msg.sender == _address, 'Not authorized');
         _;
@@ -74,7 +76,7 @@ contract Users is Ownable{
     function deposit(uint _amount) public {
         IERC20 token = IERC20(protocolTokenContract);
         require(token.balanceOf(msg.sender) >= _amount, 'Not enought balance');
-        token.transferFrom(msg.sender, address(this), _amount);
+        token.safeTransferFrom(msg.sender, address(this), _amount);
         users[msg.sender].depositBalance += _amount;
         emit UserDeposit(msg.sender, _amount, users[msg.sender].depositBalance);
     }
@@ -82,7 +84,7 @@ contract Users is Ownable{
     function withdraw(uint _amount) public {
         require(users[msg.sender].depositBalance - users[msg.sender].blockedAmount >= _amount, 'Not enough balance');
         IERC20 token = IERC20(protocolTokenContract);
-        token.transfer(msg.sender, _amount);
+        token.safeTransfer(msg.sender, _amount);
         users[msg.sender].depositBalance -= _amount;
         emit UserWithdrawal(msg.sender, _amount, users[msg.sender].depositBalance);
     }
@@ -100,6 +102,6 @@ contract Users is Ownable{
 
     function claim(address _address, uint _amount) onlyBy(chatsContract) public {
         IERC20 token = IERC20(protocolTokenContract);
-        token.transfer(_address, _amount);
+        token.safeTransfer(_address, _amount);
     }
 }
