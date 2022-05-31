@@ -68,6 +68,7 @@ contract Chats is Ownable {
 
     function confirmChat(bytes32 _id) public {
         Chat storage chat = chatsMapping[_id];
+        require(chat.status == Statuses.pending, 'Chat status is not "pending"');
         require(msg.sender == chat.caller, 'You cannot confirm the chat');
         chat.status = Statuses.started;
         chat.startDateTime = block.timestamp;
@@ -78,6 +79,7 @@ contract Chats is Ownable {
 
     function rejectChat(bytes32 _id) public {
         Chat storage chat = chatsMapping[_id];
+        require(chat.status == Statuses.pending, 'Chat status is not "pending"');
         require(msg.sender == chat.caller, 'You cannot confirm the chat');
         chat.status = Statuses.canceled;
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, 0, msg.sender);
@@ -86,6 +88,7 @@ contract Chats is Ownable {
 
     function finishChat(bytes32 _id) public {
         Chat storage chat = chatsMapping[_id];
+        require(chat.status == Statuses.started, 'Chat status is not "started"');
         require(msg.sender == chat.caller || msg.sender == chat.callee, 'You cannot finish the chat');
         chat.status = Statuses.finished;
         chat.endDateTime = block.timestamp;
@@ -96,6 +99,7 @@ contract Chats is Ownable {
 
     function extendChat(bytes32 _id) public {
         Chat storage chat = chatsMapping[_id];
+        require(chat.status == Statuses.started, 'Chat status is not "started"');
         require(msg.sender == chat.caller, 'You cannot extend the chat');
         IUsers users = IUsers(usersContract);
         users.blockDeposit(msg.sender, chat.fee);
@@ -119,8 +123,8 @@ contract Chats is Ownable {
     function claimFee(bytes32 _id) public returns (uint) {
         uint feeToClaim = getUnclaimedFee(_id);
         Chat storage chat = chatsMapping[_id];
-        require(chat.status == Statuses.finished, 'Chat needs to be finished first');
         IUsers(usersContract).claim(chat.callee, feeToClaim);
+        require(chat.status == Statuses.finished, 'Chat status is not "finished"');
         chat.status = Statuses.feeClaimed;
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
         return feeToClaim;
@@ -128,7 +132,7 @@ contract Chats is Ownable {
 
     function unblockDeposit(bytes32 _id) public returns (uint) {
         Chat storage chat = chatsMapping[_id];
-        require (chat.status == Statuses.finished || chat.status == Statuses.feeClaimed, "You can't unblock an unfinished chat");  // TODO: Canceled?
+        require (chat.status == Statuses.finished || chat.status == Statuses.feeClaimed, 'Chat status is not "finished" or "feeClaimed"');
         if (chat.status == Statuses.finished) claimFee(_id);
         return IUsers(usersContract).unblockDeposit(chat.caller);
     }
