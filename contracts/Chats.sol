@@ -5,9 +5,10 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IUsers.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract Chats is Ownable {
+contract Chats is Ownable, ReentrancyGuard {
     address public usersContract;
     address public protocolToken;
     enum Statuses {
@@ -45,7 +46,7 @@ contract Chats is Ownable {
         return chatsMapping[_id];
     }
 
-    function startChat(address _caller) public returns (bytes32) {
+    function startChat(address _caller) public nonReentrant returns (bytes32) {
         IUsers users = IUsers(usersContract);
         require(users.getUserByAddress(msg.sender).currentChatId == '' && users.getUserByAddress(_caller).currentChatId == '', 'Cannot start a chat');
         uint fee = IUsers(usersContract).getUserFee(msg.sender);
@@ -66,7 +67,7 @@ contract Chats is Ownable {
         return chat.id;
     }
 
-    function confirmChat(bytes32 _id) public {
+    function confirmChat(bytes32 _id) public nonReentrant {
         Chat storage chat = chatsMapping[_id];
         require(chat.status == Statuses.pending, 'Chat status is not "pending"');
         require(msg.sender == chat.caller, 'You cannot confirm the chat');
@@ -77,7 +78,7 @@ contract Chats is Ownable {
         users.blockDeposit(msg.sender, chat.fee);
     }
 
-    function rejectChat(bytes32 _id) public {
+    function rejectChat(bytes32 _id) public nonReentrant {
         Chat storage chat = chatsMapping[_id];
         require(chat.status == Statuses.pending, 'Chat status is not "pending"');
         require(msg.sender == chat.caller, 'You cannot confirm the chat');
@@ -86,24 +87,24 @@ contract Chats is Ownable {
         delete chatsMapping[_id];
     }
 
-    function finishChat(bytes32 _id) public {
+    function finishChat(bytes32 _id) public nonReentrant {
         Chat storage chat = chatsMapping[_id];
         require(chat.status == Statuses.started, 'Chat status is not "started"');
         require(msg.sender == chat.caller || msg.sender == chat.callee, 'You cannot finish the chat');
         chat.status = Statuses.finished;
         chat.endDateTime = block.timestamp;
+        emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
         IUsers users = IUsers(usersContract);
         users.setChatId(chat.caller, chat.callee, '');
-        emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
     }
 
-    function extendChat(bytes32 _id) public {
+    function extendChat(bytes32 _id) public nonReentrant {
         Chat storage chat = chatsMapping[_id];
         require(chat.status == Statuses.started, 'Chat status is not "started"');
         require(msg.sender == chat.caller, 'You cannot extend the chat');
+        emit ChatExtended(_id);
         IUsers users = IUsers(usersContract);
         users.blockDeposit(msg.sender, chat.fee);
-        emit ChatExtended(_id);
     }
 
     function getUnclaimedFee(bytes32 _id) public view returns (uint) {
@@ -120,17 +121,17 @@ contract Chats is Ownable {
         return feePerSecond * (end - start);
     }
 
-    function claimFee(bytes32 _id) public returns (uint) {
+    function claimFee(bytes32 _id) public nonReentrant returns (uint) {
         uint feeToClaim = getUnclaimedFee(_id);
         Chat storage chat = chatsMapping[_id];
-        IUsers(usersContract).claim(chat.callee, feeToClaim);
         require(chat.status == Statuses.finished, 'Chat status is not "finished"');
         chat.status = Statuses.feeClaimed;
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
+        IUsers(usersContract).claim(chat.callee, feeToClaim);
         return feeToClaim;
     }
 
-    function unblockDeposit(bytes32 _id) public returns (uint) {
+    function unblockDeposit(bytes32 _id) public nonReentrant returns (uint) {
         Chat storage chat = chatsMapping[_id];
         require (chat.status == Statuses.finished || chat.status == Statuses.feeClaimed, 'Chat status is not "finished" or "feeClaimed"');
         if (chat.status == Statuses.finished) claimFee(_id);
