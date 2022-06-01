@@ -103,6 +103,7 @@ contract Chats is Ownable, ReentrancyGuard {
         require(chat.status == Statuses.started, 'Chat status is not "started"');
         require(msg.sender == chat.caller, 'You cannot extend the chat');
         emit ChatExtended(_id);
+        // TODO: Handle the case in which the user doesn't have enough deposits
         IUsers users = IUsers(usersContract);
         users.blockDeposit(msg.sender, chat.fee);
     }
