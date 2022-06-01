@@ -1,6 +1,6 @@
 import pytest
 
-from brownie import Users, ChatToken, accounts
+from brownie import Users, ChatToken, Chats, accounts, reverts
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -31,6 +31,13 @@ def token(users):
     return token
 
 
+@pytest.fixture
+def chats(users):
+    chats = accounts[0].deploy(Chats)
+    users.setChatsAddress(chats.address)
+    return chats;
+
+
 def test_set_status(users):
     tx = users.register('test-user-4', 123, 1, 10, {'from': accounts[4]})
     assert users.getUserByAddress(accounts[4])['status'] == 1
@@ -56,6 +63,11 @@ def test_deposit(users, token):
     assert user2['depositBalance'] == 500 * 10 ** 18
 
 
+def test_fail_deposit_not_enough_balance(users, token):
+    with reverts():
+        users.deposit(2_000_000 * 10 ** 18, {'from': accounts[1]})
+
+
 def test_withdraw(users, token):
     users.deposit(500 * 10 ** 18, {'from': accounts[1]})
     users.deposit(1000 * 10 ** 18, {'from': accounts[2]})
@@ -67,3 +79,41 @@ def test_withdraw(users, token):
     assert user1['depositBalance'] == 250 * 10 ** 18
     user2 = users.getUserByAddress(accounts[2])
     assert user2['depositBalance'] == 1000 * 10 ** 18
+
+
+def test_withdraw_fail_not_enough_balance(users, token):
+    users.deposit(500 * 10 ** 18, {'from': accounts[1]})
+    with reverts():
+        users.withdraw(1000 * 10 ** 18, {'from': accounts[1]})
+
+
+def test_block_deposit(users, chats, token):
+    users.deposit(500 * 10 ** 18, {'from': accounts[1]})
+    users.blockDeposit(accounts[1], 300 * 10 ** 18, {'from': chats.address})
+    assert users.getUserByAddress(accounts[1])[6] == 300 * 10 ** 18 # Blocked amount
+
+
+def test_fail_block_deposit_wrong_chats_address(users, chats, token):
+    users.deposit(500 * 10 ** 18, {'from': accounts[1]})
+    with reverts():
+        users.blockDeposit(accounts[1], 300 * 10 ** 18, {'from': accounts[1]})
+        users.blockDeposit(accounts[1], 300 * 10 ** 18, {'from': accounts[2]})
+
+
+def test_fail_block_deposit_not_enough_balance(users, chats, token):
+    users.deposit(500 * 10 ** 18, {'from': accounts[1]})
+    with reverts():
+        users.blockDeposit(accounts[1], 1000 * 10 ** 18, {'from': chats.address})
+
+
+def test_unblock_deposit(users, chats, token):
+    users.deposit(500 * 10 ** 18, {'from': accounts[1]})
+    users.blockDeposit(accounts[1], 300 * 10 ** 18, {'from': chats.address})
+    users.unblockDeposit(accounts[1], {'from': chats.address})
+    assert users.getUserByAddress(accounts[1])[6] == 0 # Blocked amount
+
+
+def test_fail_unblock_deposit_wrong_chat_address(users, chats, token):
+    users.deposit(500 * 10 ** 18, {'from': accounts[1]})
+    with reverts():
+        users.unblockDeposit(accounts[1], {'from': accounts[1]})
