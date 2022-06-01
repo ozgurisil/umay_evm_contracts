@@ -133,7 +133,8 @@ contract Chats is Ownable, ReentrancyGuard {
     function unblockDeposit(bytes32 _id) external nonReentrant returns (uint) {
         Chat storage chat = chatsMapping[_id];
         require (chat.status == Statuses.finished || chat.status == Statuses.feeClaimed, 'Chat status is not "finished" or "feeClaimed"');
-        if (chat.status == Statuses.finished) claimFee(_id);
+        // TODO: Find a solution for the issue that a nonReentrant func can't call another nonReentrant func
+        // if (chat.status == Statuses.finished) claimFee(_id);
         return IUsers(usersContract).unblockDeposit(chat.caller);
     }
 }
