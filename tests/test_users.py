@@ -117,3 +117,12 @@ def test_fail_unblock_deposit_wrong_chat_address(users, chats, token):
     users.deposit(500 * 10 ** 18, {'from': accounts[1]})
     with reverts():
         users.unblockDeposit(accounts[1], {'from': accounts[1]})
+
+
+def test_blocked_deposit_withdrawal(users, chats, token):
+    users.deposit(10_000 * 1e18, {'from': accounts[1]})
+    users.blockDeposit(accounts[1], 5_000 * 1e18, {'from': chats.address})
+    users.withdraw(3_000 * 1e18, {'from': accounts[1]})
+    users.withdraw(2_000 * 1e18, {'from': accounts[1]})
+    with reverts():
+        users.withdraw(3_000 * 1e18, {'from': accounts[1]})

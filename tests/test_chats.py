@@ -174,6 +174,29 @@ def test_extend_chat(users, chats, token):
     assert abs(chats.getUnclaimedFee(chat_id) / 1e18 - 177.777) <= 0.001
 
 
+def test_extend_chat_fail_wrong_user(users, chats, token):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chat_id = tx.return_value
+    chats.confirmChat(chat_id, {'from': accounts[2]})
+    assert users.getUserByAddress(accounts[2])[6] == 100 * 10 ** 18
+    chain.sleep(3200)
+    chain.mine()
+    with reverts():
+        tx = chats.extendChat(chat_id, {'from': accounts[1]})
+        tx = chats.extendChat(chat_id, {'from': accounts[3]})
+
+
+def test_extend_chat_fail_not_enough_balance(users, chats, token):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chat_id = tx.return_value
+    chats.confirmChat(chat_id, {'from': accounts[2]})
+    assert users.getUserByAddress(accounts[2])[6] == 100 * 10 ** 18
+    chats.extendChat(chat_id, {'from': accounts[2]})
+    assert users.getUserByAddress(accounts[2])[6] == 200 * 10 ** 18
+    with reverts():
+        chats.extendChat(chat_id, {'from': accounts[2]})
+
+
 def test_require_users_not_on_a_call(users, chats):
     tx = chats.startChat(accounts[2], {'from': accounts[1]})
     chat_id = tx.return_value
