@@ -46,35 +46,35 @@ contract Users is Ownable, ReentrancyGuard{
         return users[_address];
     }
 
-    function setTokenAddress(address _address) public onlyOwner {
+    function setTokenAddress(address _address) external onlyOwner {
         protocolTokenContract = _address;
     }
 
-    function setChatsAddress(address _address) public onlyOwner {
+    function setChatsAddress(address _address) external onlyOwner {
         chatsContract = _address;
     }
 
-    function register(string calldata userName, uint birthDate, genders gender, uint fee) public {
+    function register(string calldata userName, uint birthDate, genders gender, uint fee) external {
         require(users[msg.sender].status == Statuses.notRegistered, 'Already registered');
         users[msg.sender] = User(userName, birthDate, gender, Statuses.available, fee, 0, 0, '');
         emit RegisterUser(userName);
     }
 
-    function setStatus(Statuses status) public {
+    function setStatus(Statuses status) external {
         users[msg.sender].status = status;
         emit SetStatus(msg.sender, users[msg.sender].userName, users[msg.sender].status);
     }
 
-    function setChatId(address _caller, address _callee, bytes32 _id) onlyBy(chatsContract) public {
+    function setChatId(address _caller, address _callee, bytes32 _id) onlyBy(chatsContract) external {
         users[_caller].currentChatId = _id;
         users[_callee].currentChatId = _id;
     }
 
-    function getUserFee(address _wallet) public view returns (uint) {
+    function getUserFee(address _wallet) external view returns (uint) {
         return users[_wallet].fee;
     }
 
-    function deposit(uint _amount) public nonReentrant {
+    function deposit(uint _amount) external nonReentrant {
         IERC20 token = IERC20(protocolTokenContract);
         require(token.balanceOf(msg.sender) >= _amount, 'Not enought balance');
         users[msg.sender].depositBalance += _amount;
@@ -82,7 +82,7 @@ contract Users is Ownable, ReentrancyGuard{
         token.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
-    function withdraw(uint _amount) public nonReentrant {
+    function withdraw(uint _amount) external nonReentrant {
         require(users[msg.sender].depositBalance - users[msg.sender].blockedAmount >= _amount, 'Not enough balance');
         users[msg.sender].depositBalance -= _amount;
         emit UserWithdrawal(msg.sender, _amount, users[msg.sender].depositBalance);
@@ -90,18 +90,18 @@ contract Users is Ownable, ReentrancyGuard{
         token.safeTransfer(msg.sender, _amount);
     }
 
-    function blockDeposit(address _address, uint _amount) onlyBy(chatsContract) public {
+    function blockDeposit(address _address, uint _amount) onlyBy(chatsContract) external {
         require(users[_address].depositBalance >= _amount, 'Not enough balance');
         users[_address].blockedAmount += _amount;
     }
 
-    function unblockDeposit(address _address) onlyBy (chatsContract) public returns (uint) {
+    function unblockDeposit(address _address) onlyBy (chatsContract) external returns (uint) {
         uint blockedAmount = users[_address].blockedAmount;
         users[_address].blockedAmount = 0;
         return blockedAmount;
     }
 
-    function claim(address _address, uint _amount) onlyBy(chatsContract) public {
+    function claim(address _address, uint _amount) onlyBy(chatsContract) external {
         IERC20 token = IERC20(protocolTokenContract);
         token.safeTransfer(_address, _amount);
     }

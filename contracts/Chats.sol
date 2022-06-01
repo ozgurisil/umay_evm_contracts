@@ -34,11 +34,11 @@ contract Chats is Ownable, ReentrancyGuard {
     mapping (bytes32 => Chat) private chatsMapping;  // Emulating many-to-many relationship between users with a surrogate PK
     Chat[] private chatsArray;
 
-    function setUsersContractAddress (address _address) public onlyOwner {
+    function setUsersContractAddress (address _address) external onlyOwner {
         usersContract = _address;
     }
 
-    function setTokenAddress(address _address) public onlyOwner {
+    function setTokenAddress(address _address) external onlyOwner {
         protocolToken = _address;
     }
 
@@ -46,7 +46,7 @@ contract Chats is Ownable, ReentrancyGuard {
         return chatsMapping[_id];
     }
 
-    function startChat(address _caller) public nonReentrant returns (bytes32) {
+    function startChat(address _caller) external nonReentrant returns (bytes32) {
         IUsers users = IUsers(usersContract);
         require(users.getUserByAddress(msg.sender).currentChatId == '' && users.getUserByAddress(_caller).currentChatId == '', 'Cannot start a chat');
         uint fee = IUsers(usersContract).getUserFee(msg.sender);
@@ -67,7 +67,7 @@ contract Chats is Ownable, ReentrancyGuard {
         return chat.id;
     }
 
-    function confirmChat(bytes32 _id) public nonReentrant {
+    function confirmChat(bytes32 _id) external nonReentrant {
         Chat storage chat = chatsMapping[_id];
         require(chat.status == Statuses.pending, 'Chat status is not "pending"');
         require(msg.sender == chat.caller, 'You cannot confirm the chat');
@@ -78,7 +78,7 @@ contract Chats is Ownable, ReentrancyGuard {
         users.blockDeposit(msg.sender, chat.fee);
     }
 
-    function rejectChat(bytes32 _id) public nonReentrant {
+    function rejectChat(bytes32 _id) external nonReentrant {
         Chat storage chat = chatsMapping[_id];
         require(chat.status == Statuses.pending, 'Chat status is not "pending"');
         require(msg.sender == chat.caller, 'You cannot confirm the chat');
@@ -87,7 +87,7 @@ contract Chats is Ownable, ReentrancyGuard {
         delete chatsMapping[_id];
     }
 
-    function finishChat(bytes32 _id) public nonReentrant {
+    function finishChat(bytes32 _id) external nonReentrant {
         Chat storage chat = chatsMapping[_id];
         require(chat.status == Statuses.started, 'Chat status is not "started"');
         require(msg.sender == chat.caller || msg.sender == chat.callee, 'You cannot finish the chat');
@@ -98,7 +98,7 @@ contract Chats is Ownable, ReentrancyGuard {
         users.setChatId(chat.caller, chat.callee, '');
     }
 
-    function extendChat(bytes32 _id) public nonReentrant {
+    function extendChat(bytes32 _id) external nonReentrant {
         Chat storage chat = chatsMapping[_id];
         require(chat.status == Statuses.started, 'Chat status is not "started"');
         require(msg.sender == chat.caller, 'You cannot extend the chat');
@@ -131,7 +131,7 @@ contract Chats is Ownable, ReentrancyGuard {
         return feeToClaim;
     }
 
-    function unblockDeposit(bytes32 _id) public nonReentrant returns (uint) {
+    function unblockDeposit(bytes32 _id) external nonReentrant returns (uint) {
         Chat storage chat = chatsMapping[_id];
         require (chat.status == Statuses.finished || chat.status == Statuses.feeClaimed, 'Chat status is not "finished" or "feeClaimed"');
         if (chat.status == Statuses.finished) claimFee(_id);
