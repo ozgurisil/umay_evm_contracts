@@ -91,7 +91,7 @@ contract Users is Ownable, ReentrancyGuard{
     }
 
     function blockDeposit(address _address, uint _amount) onlyBy(chatsContract) external {
-        require(users[_address].depositBalance >= _amount, 'Not enough balance');
+        require(users[_address].depositBalance - users[_address].blockedAmount >= _amount, 'Not enough balance');
         users[_address].blockedAmount += _amount;
     }
 
