@@ -117,8 +117,7 @@ contract Chats is Ownable, ReentrancyGuard {
             end = block.timestamp;
         }
         start = chat.lastFeeTimestamp > 0 ? chat.lastFeeTimestamp : chat.startDateTime;
-        uint feePerSecond = chat.fee / 3600;
-        return feePerSecond * (end - start);
+        return chat.fee * (end - start) / 3600;
     }
 
     function claimFee(bytes32 _id) public nonReentrant returns (uint) {
