@@ -213,4 +213,5 @@ def test_require_users_not_on_a_call(users, chats):
     chats.confirmChat(chat_id, {'from': accounts[2]})
     with reverts():
         chats.startChat(accounts[2], {'from': accounts[3]})
+    with reverts():
         chats.startChat(accounts[1], {'from': accounts[3]})

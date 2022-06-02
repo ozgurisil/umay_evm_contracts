@@ -97,6 +97,7 @@ def test_fail_block_deposit_wrong_chats_address(users, chats, token):
     users.deposit(500e18, {'from': accounts[1]})
     with reverts():
         users.blockDeposit(accounts[1], 300e18, {'from': accounts[1]})
+    with reverts():
         users.blockDeposit(accounts[1], 300e18, {'from': accounts[2]})
 
 
