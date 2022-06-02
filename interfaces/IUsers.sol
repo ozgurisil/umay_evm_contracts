@@ -27,6 +27,6 @@ interface IUsers {
     function getUserByAddress (address _address) external view returns (User memory);
     function setChatId(address _caller, address _callee, bytes32 _id) external;
     function blockDeposit(address _address, uint _amount) external;
-    function unblockDeposit(address _address) external returns (uint);
+    function unblockDeposit(address _address, uint exclude) external returns (uint);
     function claim(address _address, uint _amount) external;
 }

@@ -109,14 +109,14 @@ def test_fail_block_deposit_not_enough_balance(users, chats, token):
 def test_unblock_deposit(users, chats, token):
     users.deposit(500e18, {'from': accounts[1]})
     users.blockDeposit(accounts[1], 300e18, {'from': chats.address})
-    users.unblockDeposit(accounts[1], {'from': chats.address})
+    users.unblockDeposit(accounts[1], 0, {'from': chats.address})
     assert users.getUserByAddress(accounts[1])[6] == 0 # Blocked amount
 
 
 def test_fail_unblock_deposit_wrong_chat_address(users, chats, token):
     users.deposit(500e18, {'from': accounts[1]})
     with reverts():
-        users.unblockDeposit(accounts[1], {'from': accounts[1]})
+        users.unblockDeposit(accounts[1], 0, {'from': accounts[1]})
 
 
 def test_blocked_deposit_withdrawal(users, chats, token):

@@ -154,7 +154,8 @@ def test_unblock_deposit(users, chats, token):
     chats.finishChat(chat_id, {'from': accounts[1]})
     assert users.getUserByAddress(accounts[2])[6] == 100e18
     tx = chats.unblockDeposit(chat_id, {'from': accounts[1]})
-    assert users.getUserByAddress(accounts[2])[6] == 0
+    assert tx.return_value == 50e18 # Freed
+    assert users.getUserByAddress(accounts[2])[6] == 50e18  # Still blocked -- claimable by callee
 
 
 def test_extend_chat(users, chats, token):

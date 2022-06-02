@@ -95,10 +95,10 @@ contract Users is Ownable, ReentrancyGuard{
         users[_address].blockedAmount += _amount;
     }
 
-    function unblockDeposit(address _address) onlyBy (chatsContract) external returns (uint) {
+    function unblockDeposit(address _address, uint exclude) onlyBy (chatsContract) external returns (uint) {
         uint blockedAmount = users[_address].blockedAmount;
-        users[_address].blockedAmount = 0;
-        return blockedAmount;
+        users[_address].blockedAmount = exclude;
+        return blockedAmount - exclude;
     }
 
     function claim(address _address, uint _amount) onlyBy(chatsContract) external {
