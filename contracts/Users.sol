@@ -17,7 +17,7 @@ contract Users is Ownable, ReentrancyGuard{
 
     address public protocolTokenContract;
     address public chatsContract;
-    enum genders {
+    enum Genders {
         male,
         female
     }
@@ -26,17 +26,55 @@ contract Users is Ownable, ReentrancyGuard{
         available,
         notAvailable
     }
+    enum AreasOfInterest {
+        Crypto,
+        Dating,
+        NSFW,
+        Sports,
+        Movies,
+        Anime
+    }
+    enum Zodiac {
+        Aries,
+        Taurus,
+        Gemini,
+        Cancer,
+        Leo,
+        Virgo,
+        Libra,
+        Scorpio,
+        Sagittarius,
+        Capricorn,
+        Aquarius,
+        Pisces
+    }
     struct User {
         string userName;
         uint birthDate;
-        genders gender;
+        Genders gender;
         Statuses status;
         uint fee;
         uint depositBalance;
         uint blockedAmount;
         bytes32 currentChatId;
+        AreasOfInterest[] interests;
+        string bio;
+        uint latitude;
+        uint longitude;
+        Zodiac sign;
     }
-    event RegisterUser(string userName);
+    event UserProfileChange(
+        string userName,
+        uint birthDate,
+        Genders gender,
+        Statuses status,
+        uint fee,
+        AreasOfInterest[] interests,
+        string bio,
+        uint latitude,
+        uint longitude,
+        Zodiac sign
+    );
     event SetStatus(address wallet, string userName, Statuses status);
     event UserDeposit(address _address, uint _amount, uint _balance);
     event UserWithdrawal(address _address, uint _amount, uint _balance);
@@ -54,10 +92,12 @@ contract Users is Ownable, ReentrancyGuard{
         chatsContract = _address;
     }
 
-    function register(string calldata userName, uint birthDate, genders gender, uint fee) external {
-        require(users[msg.sender].status == Statuses.notRegistered, 'Already registered');
-        users[msg.sender] = User(userName, birthDate, gender, Statuses.available, fee, 0, 0, '');
-        emit RegisterUser(userName);
+    function updateProfile(
+            string memory _userName, uint _birthDate, Genders _gender, uint _fee, AreasOfInterest[] memory _interests,
+            string memory _bio, uint _latitude, uint _longitude, Zodiac _sign) external {
+        require(bytes(_userName).length >= 2 && bytes(_userName).length <= 32, 'Invalid username');
+        users[msg.sender] = User(_userName, _birthDate, _gender, Statuses.available, _fee, 0, 0, 0, _interests, _bio, _latitude, _longitude, _sign);
+        emit UserProfileChange(_userName, _birthDate, _gender, Statuses.available, _fee, _interests, _bio, _latitude, _longitude, _sign);
     }
 
     function setStatus(Statuses status) external {

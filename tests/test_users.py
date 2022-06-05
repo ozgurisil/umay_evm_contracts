@@ -11,12 +11,12 @@ def isolate(fn_isolation):
 @pytest.fixture
 def users(isolate):
     users = accounts[0].deploy(Users)
-    users.register('test-user-1', 123, 1, 100e18, {'from': accounts[1]})
-    assert users.getUserByAddress(accounts[1]) == ('test-user-1', 123, 1, 1, 100e18, 0, 0, '0x0')
-    users.register('test-user-2', 123, 1, 200e18, {'from': accounts[2]})
-    assert users.getUserByAddress(accounts[2]) == ('test-user-2', 123, 1, 1, 200e18, 0, 0, '0x0')
-    users.register('test-user-3', 123, 1, 300e18, {'from': accounts[3]})
-    assert users.getUserByAddress(accounts[3]) == ('test-user-3', 123, 1, 1, 300e18, 0, 0, '0x0')
+    users.updateProfile('test-user-1', 123, 1, 100e18, [], 'bio for user 1', 41, 29, 1, {'from': accounts[1]})
+    assert users.getUserByAddress(accounts[1]) == ('test-user-1', 123, 1, 1, 100e18, 0, 0, '0x0', [], 'bio for user 1', 41, 29, 1)
+    users.updateProfile('test-user-2', 123, 1, 200e18, [], 'bio for user 2', 41, 29, 1, {'from': accounts[2]})
+    assert users.getUserByAddress(accounts[2]) == ('test-user-2', 123, 1, 1, 200e18, 0, 0, '0x0', [], 'bio for user 2', 41, 29, 1)
+    users.updateProfile('test-user-3', 123, 1, 300e18, [], 'bio for user 3', 41, 29, 1, {'from': accounts[3]})
+    assert users.getUserByAddress(accounts[3]) == ('test-user-3', 123, 1, 1, 300e18, 0, 0, '0x0', [], 'bio for user 3', 41, 29, 1)
     return users
 
 
@@ -38,8 +38,27 @@ def chats(users):
     return chats;
 
 
+def test_update_profile_valid_username(users):
+    users.updateProfile('aB1_+-@ şğiüçö', 123, 1, 100e18, [1, 3, 5], 'bio for user 5', 41, 29, 1, {'from': accounts[5]})
+
+
+def test_update_profile_invalid_username(users):
+    with reverts():
+        users.updateProfile('', 123, 1, 100e18, [1, 3, 5], 'bio for user 5', 41, 29, 1, {'from': accounts[5]})
+    with reverts():
+        users.updateProfile('a', 123, 1, 100e18, [1, 3, 5], 'bio for user 5', 41, 29, 1, {'from': accounts[5]})
+    with reverts():
+        users.updateProfile('a' * 33, 123, 1, 100e18, [1, 3, 5], 'bio for user 5', 41, 29, 1, {'from': accounts[5]})
+
+
+def test_update_profile_areas_of_interest(users):
+    users.updateProfile('test-user-5', 123, 1, 100e18, [1, 3, 5], 'bio for user 5', 41, 29, 1, {'from': accounts[5]})
+    user5 = users.getUserByAddress(accounts[5])
+    assert user5[8] == (1, 3, 5)
+
+
 def test_set_status(users):
-    tx = users.register('test-user-4', 123, 1, 10, {'from': accounts[4]})
+    tx = users.updateProfile('test-user-4', 123, 1, 10, [], 'bio for user 4', 41, 29, 1, {'from': accounts[4]})
     assert users.getUserByAddress(accounts[4])['status'] == 1
     tx = users.setStatus(2, {'from': accounts[4]})
     assert users.getUserByAddress(accounts[4])['status'] == 2

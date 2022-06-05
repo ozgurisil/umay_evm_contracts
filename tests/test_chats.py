@@ -16,9 +16,9 @@ def isolate(fn_isolation):
 @pytest.fixture(scope='module')
 def users():
     users = accounts[0].deploy(Users)
-    users.register('test-user-1', 123, 1, 100e18, {'from': accounts[1]})
-    users.register('test-user-2', 123, 1, 200e18, {'from': accounts[2]})
-    users.register('test-user-3', 123, 1, 300e18, {'from': accounts[3]})
+    users.updateProfile('test-user-1', 123, 1, 100e18, [], 'bio for user 1', 41, 29, 1, {'from': accounts[1]})
+    users.updateProfile('test-user-2', 123, 1, 200e18, [], 'bio for user 1', 41, 29, 1, {'from': accounts[2]})
+    users.updateProfile('test-user-3', 123, 1, 300e18, [], 'bio for user 1', 41, 29, 1, {'from': accounts[3]})
     return users
 
 
