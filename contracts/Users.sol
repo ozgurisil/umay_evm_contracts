@@ -75,9 +75,9 @@ contract Users is Ownable, ReentrancyGuard{
         uint longitude,
         Zodiac sign
     );
-    event SetStatus(address wallet, string userName, Statuses status);
-    event UserDeposit(address _address, uint _amount, uint _balance);
-    event UserWithdrawal(address _address, uint _amount, uint _balance);
+    event SetStatus(address indexed wallet, string userName, Statuses indexed status);
+    event UserDeposit(address indexed _address, uint _amount, uint _balance);
+    event UserWithdrawal(address indexed _address, uint _amount, uint _balance);
     mapping (address => User) public users;
 
     function getUserByAddress(address _address) public view returns (User memory) {

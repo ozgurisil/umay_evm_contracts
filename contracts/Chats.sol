@@ -28,9 +28,9 @@ contract Chats is Ownable, ReentrancyGuard {
         uint lastFeeTimestamp;
         Statuses status;
     }
-    event ChatInit(bytes32 id, address caller, address callee, uint fee, address sender);
-    event ChatStatusChange(bytes32 id, Statuses status, uint startDateTime, uint EndDateTime, address sender);
-    event ChatExtended(bytes32 id);
+    event ChatInit(bytes32 indexed id, address indexed caller, address indexed callee, uint fee, address sender);
+    event ChatStatusChange(bytes32 indexed id, Statuses indexed status, uint startDateTime, uint EndDateTime, address sender);
+    event ChatExtended(bytes32 indexed id);
     mapping (bytes32 => Chat) private chatsMapping;  // Emulating many-to-many relationship between users with a surrogate PK
     Chat[] private chatsArray;
 
