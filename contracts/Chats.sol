@@ -73,6 +73,7 @@ contract Chats is Ownable, ReentrancyGuard {
         require(msg.sender == chat.caller, 'You cannot confirm the chat');
         chat.status = Statuses.started;
         chat.startDateTime = block.timestamp;
+        // CONSIDERATION: setChatId() might better be called here instead of startChat()
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, 0, msg.sender);
         IUsers users = IUsers(usersContract);
         users.blockDeposit(msg.sender, chat.fee);
@@ -85,6 +86,7 @@ contract Chats is Ownable, ReentrancyGuard {
         chat.status = Statuses.canceled;
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, 0, msg.sender);
         IUsers users = IUsers(usersContract);
+        // CONSIDERATION: If setChatId is called in confirmChat, this won't be needed here.
         users.setChatId(chat.caller, chat.callee, '');
     }
 
