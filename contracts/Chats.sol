@@ -78,6 +78,16 @@ contract Chats is Ownable, ReentrancyGuard {
         users.blockDeposit(msg.sender, chat.fee);
     }
 
+    function cancelChat(bytes32 _id) external nonReentrant {
+        Chat storage chat = chatsMapping[_id];
+        require(chat.status == Statuses.pending, 'Chat status is not "pending"');
+        require(msg.sender == chat.callee, 'You cannot cancel the chat');
+        chat.status = Statuses.canceled;
+        emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, 0, msg.sender);
+        IUsers users = IUsers(usersContract);
+        users.setChatId(chat.caller, chat.callee, '');
+    }
+
     function rejectChat(bytes32 _id) external nonReentrant {
         Chat storage chat = chatsMapping[_id];
         require(chat.status == Statuses.pending, 'Chat status is not "pending"');

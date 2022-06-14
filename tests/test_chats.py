@@ -67,6 +67,33 @@ def test_start_chat_fail_ongoing_chat(users, chats):
         chats.startChat(accounts[3], {'from': accounts[2]})
 
 
+def test_start_chat_fail_multiple_chats(users, chats):
+    chats.startChat(accounts[2], {'from': accounts[1]})
+    with reverts():
+        chats.startChat(accounts[2], {'from': accounts[3]})
+
+
+def test_cancel_chat(users, chats):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chats.cancelChat(tx.return_value, {'from': accounts[1]})
+    chats.startChat(accounts[3], {'from': accounts[1]})
+
+
+def test_cancel_chat_fail_invalid_user(users, chats):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    with reverts():
+        chats.cancelChat(tx.return_value, {'from': accounts[3]})
+    with reverts():
+        chats.cancelChat(tx.return_value, {'from': accounts[2]})
+
+
+def test_cancel_chat_fail_chat_started(users, chats):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chats.confirmChat(tx.return_value, {'from': accounts[2]})
+    with reverts():
+        chats.cancelChat(tx.return_value, {'from': accounts[1]})
+
+
 def test_confirm_chat(users, chats, token):
     tx = chats.startChat(accounts[2], {'from': accounts[1]})
     chat_id = tx.return_value
