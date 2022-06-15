@@ -63,6 +63,8 @@ def test_set_status(users):
     tx = users.setStatus(2, {'from': accounts[4]})
     assert users.getUserByAddress(accounts[4])['status'] == 2
     assert 'SetStatus' in tx.events and tx.events[0] == {'wallet': accounts[4], 'userName': 'test-user-4', 'status': 2}
+    with reverts():
+        tx = users.setStatus(0, {'from': accounts[4]})
 
 
 def test_deposit(users, token):

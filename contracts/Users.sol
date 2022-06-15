@@ -18,6 +18,7 @@ contract Users is Ownable, ReentrancyGuard{
     address public protocolTokenContract;
     address public chatsContract;
     enum Genders {
+        unknown,
         male,
         female
     }
@@ -35,6 +36,7 @@ contract Users is Ownable, ReentrancyGuard{
         Anime
     }
     enum Zodiac {
+        unknown,
         Aries,
         Taurus,
         Gemini,
@@ -78,7 +80,7 @@ contract Users is Ownable, ReentrancyGuard{
     event SetStatus(address indexed wallet, string userName, Statuses indexed status);
     event UserDeposit(address indexed _address, uint _amount, uint _balance);
     event UserWithdrawal(address indexed _address, uint _amount, uint _balance);
-    mapping (address => User) public users;
+    mapping (address => User) private users;
 
     function getUserByAddress(address _address) public view returns (User memory) {
         return users[_address];
@@ -95,13 +97,32 @@ contract Users is Ownable, ReentrancyGuard{
     function updateProfile(
             string memory _userName, uint _birthDate, Genders _gender, uint _fee, AreasOfInterest[] memory _interests,
             string memory _bio, uint _latitude, uint _longitude, Zodiac _sign) external {
-        require(bytes(_userName).length >= 2 && bytes(_userName).length <= 32, 'Invalid username');
-        users[msg.sender] = User(_userName, _birthDate, _gender, Statuses.available, _fee, 0, 0, 0, _interests, _bio, _latitude, _longitude, _sign);
+
+        if (users[msg.sender].status == Statuses.notRegistered) {
+            require(bytes(_userName).length >= 2 && bytes(_userName).length <= 32, 'Invalid username');
+            users[msg.sender] = User(_userName, _birthDate, _gender, Statuses.available, _fee, 0, 0, 0, _interests, _bio, _latitude, _longitude, _sign, 0, 0);
+        }
+        else {
+            User storage user = users[msg.sender];
+            if (bytes(_userName).length > 0) {
+                require(bytes(_userName).length >= 2 && bytes(_userName).length <= 32, 'Invalid username');
+                user.userName = _userName;
+            }
+            user.birthDate = _birthDate;
+            user.gender = _gender;
+            user.fee =_fee;
+            user.interests = _interests;
+            user.bio = _bio;
+            user.latitude = _latitude;
+            user.longitude = _longitude;
+            user.sign = _sign;
+        }
         emit UserProfileChange(_userName, _birthDate, _gender, Statuses.available, _fee, _interests, _bio, _latitude, _longitude, _sign);
     }
 
-    function setStatus(Statuses status) external {
-        users[msg.sender].status = status;
+    function setStatus(Statuses _status) external {
+        require(_status != Statuses.notRegistered, 'Invalid status');
+        users[msg.sender].status = _status;
         emit SetStatus(msg.sender, users[msg.sender].userName, users[msg.sender].status);
     }
 
