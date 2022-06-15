@@ -177,7 +177,7 @@ contract Users is Ownable, ReentrancyGuard{
         token.safeTransfer(_address, _amount);
     }
 
-    function rateUser(address _address, uint _rating) external {
+    function addRating(address _address, uint _rating) external {
         require(_rating == 1000 || _rating == 2000 || _rating == 3000 || _rating == 4000 || _rating == 5000, 'Invalid rating');
         ratings[msg.sender].push(Rating(_address, _rating));
         users[_address].avgRating = (users[_address].avgRating * users[_address].cntRating + _rating) / (users[_address].cntRating + 1);

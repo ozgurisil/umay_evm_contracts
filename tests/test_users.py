@@ -153,29 +153,29 @@ def test_blocked_deposit_withdrawal(users, chats, token):
 
 # TODO: Add stateful testing
 def test_add_rating(users, chats):
-    users.rateUser(accounts[1], 3000, {'from': accounts[2]})
+    users.addRating(accounts[1], 3000, {'from': accounts[2]})
     user = users.getUserByAddress(accounts[1])
     assert user[-2:] == (3000, 1)
-    users.rateUser(accounts[1], 1000, {'from': accounts[3]})
+    users.addRating(accounts[1], 1000, {'from': accounts[3]})
     user = users.getUserByAddress(accounts[1])
     assert user[-2:] == (2000, 2)
-    users.rateUser(accounts[1], 4000, {'from': accounts[4]})
+    users.addRating(accounts[1], 4000, {'from': accounts[4]})
     user = users.getUserByAddress(accounts[1])
     assert user[-2:] == (2666, 3)
-    users.rateUser(accounts[1], 2000, {'from': accounts[5]})
+    users.addRating(accounts[1], 2000, {'from': accounts[5]})
     user = users.getUserByAddress(accounts[1])
     assert user[-2:] == (2499, 4)
-    users.rateUser(accounts[1], 5000, {'from': accounts[6]})
+    users.addRating(accounts[1], 5000, {'from': accounts[6]})
     user = users.getUserByAddress(accounts[1])
     assert user[-2:] == (2999, 5)
 
 
 def test_ratings_by_user(users, chats):
-    users.rateUser(accounts[1], 1000, {'from': accounts[2]})
-    users.rateUser(accounts[3], 2000, {'from': accounts[2]})
-    users.rateUser(accounts[4], 3000, {'from': accounts[2]})
-    users.rateUser(accounts[5], 4000, {'from': accounts[2]})
-    users.rateUser(accounts[6], 5000, {'from': accounts[2]})
+    users.addRating(accounts[1], 1000, {'from': accounts[2]})
+    users.addRating(accounts[3], 2000, {'from': accounts[2]})
+    users.addRating(accounts[4], 3000, {'from': accounts[2]})
+    users.addRating(accounts[5], 4000, {'from': accounts[2]})
+    users.addRating(accounts[6], 5000, {'from': accounts[2]})
     tx = users.getRatingsByUser(0, 3, {'from': accounts[2]})
     assert tx == ((
         (accounts[1], 1000),
@@ -187,12 +187,12 @@ def test_ratings_by_user(users, chats):
 
 
 def test_add_rating_by_multiple_users(users, chats):
-    users.rateUser(accounts[2], 1000, {'from': accounts[1]})
-    users.rateUser(accounts[3], 2000, {'from': accounts[1]})
-    users.rateUser(accounts[1], 1000, {'from': accounts[2]})
-    users.rateUser(accounts[3], 2000, {'from': accounts[2]})
-    users.rateUser(accounts[1], 1000, {'from': accounts[3]})
-    users.rateUser(accounts[2], 2000, {'from': accounts[3]})
+    users.addRating(accounts[2], 1000, {'from': accounts[1]})
+    users.addRating(accounts[3], 2000, {'from': accounts[1]})
+    users.addRating(accounts[1], 1000, {'from': accounts[2]})
+    users.addRating(accounts[3], 2000, {'from': accounts[2]})
+    users.addRating(accounts[1], 1000, {'from': accounts[3]})
+    users.addRating(accounts[2], 2000, {'from': accounts[3]})
     assert users.getRatingsByUser(0, 5, {'from': accounts[1]}) == (((accounts[2], 1000), (accounts[3], 2000)), 0)
     assert users.getRatingsByUser(0, 5, {'from': accounts[2]}) == (((accounts[1], 1000), (accounts[3], 2000)), 0)
     assert users.getRatingsByUser(0, 5, {'from': accounts[3]}) == (((accounts[1], 1000), (accounts[2], 2000)), 0)
@@ -202,11 +202,11 @@ def test_add_rating_by_multiple_users(users, chats):
 
 
 def test_remove_rating_by_user(users, chats):
-    users.rateUser(accounts[1], 1000, {'from': accounts[2]})
-    users.rateUser(accounts[3], 2000, {'from': accounts[2]})
-    users.rateUser(accounts[4], 3000, {'from': accounts[2]})
-    users.rateUser(accounts[5], 4000, {'from': accounts[2]})
-    users.rateUser(accounts[6], 5000, {'from': accounts[2]})
+    users.addRating(accounts[1], 1000, {'from': accounts[2]})
+    users.addRating(accounts[3], 2000, {'from': accounts[2]})
+    users.addRating(accounts[4], 3000, {'from': accounts[2]})
+    users.addRating(accounts[5], 4000, {'from': accounts[2]})
+    users.addRating(accounts[6], 5000, {'from': accounts[2]})
     tx = users.removeRating(accounts[4], {'from': accounts[2]})
     assert tx.return_value is True
     tx = users.getRatingsByUser(0, 10, {'from': accounts[2]})
@@ -219,11 +219,11 @@ def test_remove_rating_by_user(users, chats):
 
 
 def test_remove_rating_from_user(users, chats):
-    users.rateUser(accounts[1], 1000, {'from': accounts[2]})
-    users.rateUser(accounts[1], 2000, {'from': accounts[3]})
-    users.rateUser(accounts[1], 3000, {'from': accounts[4]})
-    users.rateUser(accounts[1], 4000, {'from': accounts[5]})
-    users.rateUser(accounts[1], 5000, {'from': accounts[6]})
+    users.addRating(accounts[1], 1000, {'from': accounts[2]})
+    users.addRating(accounts[1], 2000, {'from': accounts[3]})
+    users.addRating(accounts[1], 3000, {'from': accounts[4]})
+    users.addRating(accounts[1], 4000, {'from': accounts[5]})
+    users.addRating(accounts[1], 5000, {'from': accounts[6]})
     tx = users.getUserByAddress(accounts[1])
     assert tx[-2:] == (3000, 5)
     tx = users.removeRating(accounts[1], {'from': accounts[5]})
@@ -233,10 +233,10 @@ def test_remove_rating_from_user(users, chats):
 
 
 def test_remove_rating_fail(users, chats):
-    users.rateUser(accounts[1], 1000, {'from': accounts[2]})
-    users.rateUser(accounts[3], 2000, {'from': accounts[2]})
-    users.rateUser(accounts[4], 3000, {'from': accounts[2]})
-    users.rateUser(accounts[5], 4000, {'from': accounts[2]})
-    users.rateUser(accounts[6], 5000, {'from': accounts[2]})
+    users.addRating(accounts[1], 1000, {'from': accounts[2]})
+    users.addRating(accounts[3], 2000, {'from': accounts[2]})
+    users.addRating(accounts[4], 3000, {'from': accounts[2]})
+    users.addRating(accounts[5], 4000, {'from': accounts[2]})
+    users.addRating(accounts[6], 5000, {'from': accounts[2]})
     tx = users.removeRating(accounts[7], {'from': accounts[2]})
     assert tx.return_value is False
