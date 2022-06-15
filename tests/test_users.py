@@ -199,3 +199,44 @@ def test_add_rating_by_multiple_users(users, chats):
     assert users.getUserByAddress(accounts[1])[-2:] == (1000, 2)
     assert users.getUserByAddress(accounts[2])[-2:] == (1500, 2)
     assert users.getUserByAddress(accounts[3])[-2:] == (2000, 2)
+
+
+def test_remove_rating_by_user(users, chats):
+    users.rateUser(accounts[1], 1000, {'from': accounts[2]})
+    users.rateUser(accounts[3], 2000, {'from': accounts[2]})
+    users.rateUser(accounts[4], 3000, {'from': accounts[2]})
+    users.rateUser(accounts[5], 4000, {'from': accounts[2]})
+    users.rateUser(accounts[6], 5000, {'from': accounts[2]})
+    tx = users.removeRating(accounts[4], {'from': accounts[2]})
+    assert tx.return_value is True
+    tx = users.getRatingsByUser(0, 10, {'from': accounts[2]})
+    assert tx == ((
+        (accounts[1], 1000),
+        (accounts[3], 2000),
+        (accounts[6], 5000),
+        (accounts[5], 4000),
+        ), 0)
+
+
+def test_remove_rating_from_user(users, chats):
+    users.rateUser(accounts[1], 1000, {'from': accounts[2]})
+    users.rateUser(accounts[1], 2000, {'from': accounts[3]})
+    users.rateUser(accounts[1], 3000, {'from': accounts[4]})
+    users.rateUser(accounts[1], 4000, {'from': accounts[5]})
+    users.rateUser(accounts[1], 5000, {'from': accounts[6]})
+    tx = users.getUserByAddress(accounts[1])
+    assert tx[-2:] == (3000, 5)
+    tx = users.removeRating(accounts[1], {'from': accounts[5]})
+    assert tx.return_value is True
+    tx = users.getUserByAddress(accounts[1])
+    assert tx[-2:] == (2750, 4)
+
+
+def test_remove_rating_fail(users, chats):
+    users.rateUser(accounts[1], 1000, {'from': accounts[2]})
+    users.rateUser(accounts[3], 2000, {'from': accounts[2]})
+    users.rateUser(accounts[4], 3000, {'from': accounts[2]})
+    users.rateUser(accounts[5], 4000, {'from': accounts[2]})
+    users.rateUser(accounts[6], 5000, {'from': accounts[2]})
+    tx = users.removeRating(accounts[7], {'from': accounts[2]})
+    assert tx.return_value is False

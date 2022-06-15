@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 
 contract Users is Ownable, ReentrancyGuard{
@@ -181,6 +182,24 @@ contract Users is Ownable, ReentrancyGuard{
         ratings[msg.sender].push(Rating(_address, _rating));
         users[_address].avgRating = (users[_address].avgRating * users[_address].cntRating + _rating) / (users[_address].cntRating + 1);
         users[_address].cntRating++;
+    }
+
+    function removeRating(address _address) external returns (bool) {
+        Rating[] storage ratingsByUser = ratings[msg.sender];
+        uint rating = 0;
+        for (uint i = 0; i < ratingsByUser.length; i++) {
+            if (ratingsByUser[i].rated == _address) {
+                rating = ratingsByUser[i].rating;
+                ratingsByUser[i] = ratingsByUser[ratingsByUser.length-1];
+            }
+        }
+        if (rating > 0) {
+            ratingsByUser.pop();
+            users[_address].avgRating = (users[_address].avgRating * users[_address].cntRating - rating) / Math.max(users[_address].cntRating - 1, 1);
+            users[_address].cntRating--;
+            return true;
+        }
+        return false;
     }
 
     function getRatingsByUser(uint _cursor, uint _length) external view returns (Rating[] memory results, uint nextCursor) {
