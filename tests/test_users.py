@@ -1,6 +1,7 @@
 import pytest
 
 from brownie import Users, ChatToken, Chats, accounts, reverts
+from brownie.test import given, strategy
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -12,11 +13,11 @@ def isolate(fn_isolation):
 def users(isolate):
     users = accounts[0].deploy(Users)
     users.updateProfile('test-user-1', 123, 1, 100e18, [], 'bio for user 1', 41, 29, 1, {'from': accounts[1]})
-    assert users.getUserByAddress(accounts[1]) == ('test-user-1', 123, 1, 1, 100e18, 0, 0, '0x0', [], 'bio for user 1', 41, 29, 1)
+    assert users.getUserByAddress(accounts[1]) == ('test-user-1', 123, 1, 1, 100e18, 0, 0, '0x0', [], 'bio for user 1', 41, 29, 1, 0, 0)
     users.updateProfile('test-user-2', 123, 1, 200e18, [], 'bio for user 2', 41, 29, 1, {'from': accounts[2]})
-    assert users.getUserByAddress(accounts[2]) == ('test-user-2', 123, 1, 1, 200e18, 0, 0, '0x0', [], 'bio for user 2', 41, 29, 1)
+    assert users.getUserByAddress(accounts[2]) == ('test-user-2', 123, 1, 1, 200e18, 0, 0, '0x0', [], 'bio for user 2', 41, 29, 1, 0, 0)
     users.updateProfile('test-user-3', 123, 1, 300e18, [], 'bio for user 3', 41, 29, 1, {'from': accounts[3]})
-    assert users.getUserByAddress(accounts[3]) == ('test-user-3', 123, 1, 1, 300e18, 0, 0, '0x0', [], 'bio for user 3', 41, 29, 1)
+    assert users.getUserByAddress(accounts[3]) == ('test-user-3', 123, 1, 1, 300e18, 0, 0, '0x0', [], 'bio for user 3', 41, 29, 1, 0, 0)
     return users
 
 
@@ -148,3 +149,53 @@ def test_blocked_deposit_withdrawal(users, chats, token):
     users.withdraw(2_000e18, {'from': accounts[1]})
     with reverts():
         users.withdraw(3_000e18, {'from': accounts[1]})
+
+
+# TODO: Add stateful testing
+def test_add_rating(users, chats):
+    users.rateUser(accounts[1], 3000, {'from': accounts[2]})
+    user = users.getUserByAddress(accounts[1])
+    assert user[-2:] == (3000, 1)
+    users.rateUser(accounts[1], 1000, {'from': accounts[3]})
+    user = users.getUserByAddress(accounts[1])
+    assert user[-2:] == (2000, 2)
+    users.rateUser(accounts[1], 4000, {'from': accounts[4]})
+    user = users.getUserByAddress(accounts[1])
+    assert user[-2:] == (2666, 3)
+    users.rateUser(accounts[1], 2000, {'from': accounts[5]})
+    user = users.getUserByAddress(accounts[1])
+    assert user[-2:] == (2499, 4)
+    users.rateUser(accounts[1], 5000, {'from': accounts[6]})
+    user = users.getUserByAddress(accounts[1])
+    assert user[-2:] == (2999, 5)
+
+
+def test_ratings_by_user(users, chats):
+    users.rateUser(accounts[1], 1000, {'from': accounts[2]})
+    users.rateUser(accounts[3], 2000, {'from': accounts[2]})
+    users.rateUser(accounts[4], 3000, {'from': accounts[2]})
+    users.rateUser(accounts[5], 4000, {'from': accounts[2]})
+    users.rateUser(accounts[6], 5000, {'from': accounts[2]})
+    tx = users.getRatingsByUser(0, 3, {'from': accounts[2]})
+    assert tx == ((
+        (accounts[1], 1000),
+        (accounts[3], 2000),
+        (accounts[4], 3000),
+        ), 3)
+    tx = users.getRatingsByUser(3, 3, {'from': accounts[2]})
+    assert tx == (((accounts[5], 4000), (accounts[6], 5000)), 0)
+
+
+def test_add_rating_by_multiple_users(users, chats):
+    users.rateUser(accounts[2], 1000, {'from': accounts[1]})
+    users.rateUser(accounts[3], 2000, {'from': accounts[1]})
+    users.rateUser(accounts[1], 1000, {'from': accounts[2]})
+    users.rateUser(accounts[3], 2000, {'from': accounts[2]})
+    users.rateUser(accounts[1], 1000, {'from': accounts[3]})
+    users.rateUser(accounts[2], 2000, {'from': accounts[3]})
+    assert users.getRatingsByUser(0, 5, {'from': accounts[1]}) == (((accounts[2], 1000), (accounts[3], 2000)), 0)
+    assert users.getRatingsByUser(0, 5, {'from': accounts[2]}) == (((accounts[1], 1000), (accounts[3], 2000)), 0)
+    assert users.getRatingsByUser(0, 5, {'from': accounts[3]}) == (((accounts[1], 1000), (accounts[2], 2000)), 0)
+    assert users.getUserByAddress(accounts[1])[-2:] == (1000, 2)
+    assert users.getUserByAddress(accounts[2])[-2:] == (1500, 2)
+    assert users.getUserByAddress(accounts[3])[-2:] == (2000, 2)

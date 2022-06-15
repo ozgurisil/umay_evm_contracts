@@ -64,6 +64,8 @@ contract Users is Ownable, ReentrancyGuard{
         uint latitude;
         uint longitude;
         Zodiac sign;
+        uint avgRating;
+        uint cntRating;
     }
     event UserProfileChange(
         string userName,
@@ -77,10 +79,17 @@ contract Users is Ownable, ReentrancyGuard{
         uint longitude,
         Zodiac sign
     );
+
+    struct Rating {
+        address rated;
+        uint rating;
+    }
+
     event SetStatus(address indexed wallet, string userName, Statuses indexed status);
     event UserDeposit(address indexed _address, uint _amount, uint _balance);
     event UserWithdrawal(address indexed _address, uint _amount, uint _balance);
     mapping (address => User) private users;
+    mapping (address => Rating[]) public ratings;
 
     function getUserByAddress(address _address) public view returns (User memory) {
         return users[_address];
@@ -165,5 +174,28 @@ contract Users is Ownable, ReentrancyGuard{
     function claim(address _address, uint _amount) onlyBy(chatsContract) external {
         IERC20 token = IERC20(protocolTokenContract);
         token.safeTransfer(_address, _amount);
+    }
+
+    function rateUser(address _address, uint _rating) external {
+        require(_rating == 1000 || _rating == 2000 || _rating == 3000 || _rating == 4000 || _rating == 5000, 'Invalid rating');
+        ratings[msg.sender].push(Rating(_address, _rating));
+        users[_address].avgRating = (users[_address].avgRating * users[_address].cntRating + _rating) / (users[_address].cntRating + 1);
+        users[_address].cntRating++;
+    }
+
+    function getRatingsByUser(uint _cursor, uint _length) external view returns (Rating[] memory results, uint nextCursor) {
+        bool _final = false;
+        if (_length > ratings[msg.sender].length - _cursor) {
+            _length = ratings[msg.sender].length - _cursor;
+            _final = true;
+        }
+        Rating[] memory ratingsByUser = new Rating[](_length);
+        for (uint i = 0; i < _length; i++) {
+            ratingsByUser[i] = ratings[msg.sender][_cursor + i];
+        }
+        if (_final) {
+            return (ratingsByUser, 0);
+        }
+        return (ratingsByUser, _cursor + _length);
     }
 }
