@@ -67,6 +67,8 @@ contract Users is Ownable, ReentrancyGuard{
         Zodiac sign;
         uint avgRating;
         uint cntRating;
+        bytes32 firstRating;
+        bytes32 lastRating;
     }
     event UserProfileChange(
         string userName,
@@ -84,13 +86,16 @@ contract Users is Ownable, ReentrancyGuard{
     struct Rating {
         address rated;
         uint rating;
+        bytes32 prevRating;
+        bytes32 nextRating;
     }
 
     event SetStatus(address indexed wallet, string userName, Statuses indexed status);
     event UserDeposit(address indexed _address, uint _amount, uint _balance);
     event UserWithdrawal(address indexed _address, uint _amount, uint _balance);
     mapping (address => User) private users;
-    mapping (address => Rating[]) public ratings;
+
+    mapping (bytes32 => Rating) public ratings;
 
     function getUserByAddress(address _address) public view returns (User memory) {
         return users[_address];
@@ -110,7 +115,8 @@ contract Users is Ownable, ReentrancyGuard{
 
         if (users[msg.sender].status == Statuses.notRegistered) {
             require(bytes(_userName).length >= 2 && bytes(_userName).length <= 32, 'Invalid username');
-            users[msg.sender] = User(_userName, _birthDate, _gender, Statuses.available, _fee, 0, 0, 0, _interests, _bio, _latitude, _longitude, _sign, 0, 0);
+            users[msg.sender] = User(
+                _userName, _birthDate, _gender, Statuses.available, _fee, 0, 0, 0, _interests, _bio, _latitude, _longitude, _sign, 0, 0, 0x0, 0x0);
         }
         else {
             User storage user = users[msg.sender];
@@ -178,43 +184,51 @@ contract Users is Ownable, ReentrancyGuard{
     }
 
     function addRating(address _address, uint _rating) external {
+        bytes32 hash = keccak256(abi.encodePacked(msg.sender, _address));
         require(_rating == 1000 || _rating == 2000 || _rating == 3000 || _rating == 4000 || _rating == 5000, 'Invalid rating');
-        ratings[msg.sender].push(Rating(_address, _rating));
+        require(ratings[hash].rating == 0, 'Duplicate rating');
+
+        ratings[hash] = Rating(_address, _rating, users[msg.sender].lastRating, 0x0);
+
+        if (users[msg.sender].firstRating == 0x0) {
+            users[msg.sender].firstRating = hash;
+        }
+        ratings[users[msg.sender].lastRating].nextRating = hash;
+        users[msg.sender].lastRating = hash;
+
         users[_address].avgRating = (users[_address].avgRating * users[_address].cntRating + _rating) / (users[_address].cntRating + 1);
         users[_address].cntRating++;
     }
 
-    function removeRating(address _address) external returns (bool) {
-        Rating[] storage ratingsByUser = ratings[msg.sender];
-        uint rating = 0;
-        for (uint i = 0; i < ratingsByUser.length; i++) {
-            if (ratingsByUser[i].rated == _address) {
-                rating = ratingsByUser[i].rating;
-                ratingsByUser[i] = ratingsByUser[ratingsByUser.length-1];
-            }
-        }
-        if (rating > 0) {
-            ratingsByUser.pop();
-            users[_address].avgRating = (users[_address].avgRating * users[_address].cntRating - rating) / Math.max(users[_address].cntRating - 1, 1);
-            users[_address].cntRating--;
-            return true;
-        }
-        return false;
+    function removeRating(address _address) external {
+        bytes32 hash = keccak256(abi.encodePacked(msg.sender, _address));
+        require(ratings[hash].rated != address(0), 'Invalid address');
+        uint rating = ratings[hash].rating;
+
+        // Fix linked list elements
+        ratings[ratings[hash].nextRating].prevRating = ratings[hash].prevRating;
+        ratings[ratings[hash].prevRating].nextRating = ratings[hash].nextRating;
+        delete ratings[hash];
+
+        // Fix user's ratings
+        users[_address].avgRating = (users[_address].avgRating * users[_address].cntRating - rating) / Math.max(users[_address].cntRating - 1, 1);
+        users[_address].cntRating--;
     }
 
-    function getRatingsByUser(uint _cursor, uint _length) external view returns (Rating[] memory results, uint nextCursor) {
-        bool _final = false;
-        if (_length > ratings[msg.sender].length - _cursor) {
-            _length = ratings[msg.sender].length - _cursor;
-            _final = true;
-        }
+    function getRatingsByUser(bytes32 _start, uint _length) external view returns (Rating[] memory) {
         Rating[] memory ratingsByUser = new Rating[](_length);
+        bytes32 nextPage;
+        if (_start == 0x0) {
+            _start = users[msg.sender].firstRating;
+        }
+        Rating memory rating = ratings[_start];
+
         for (uint i = 0; i < _length; i++) {
-            ratingsByUser[i] = ratings[msg.sender][_cursor + i];
+            ratingsByUser[i] = rating;
+            rating = ratings[rating.nextRating];
+            nextPage = rating.nextRating;
+            if (rating.rated == address(0)) break;
         }
-        if (_final) {
-            return (ratingsByUser, 0);
-        }
-        return (ratingsByUser, _cursor + _length);
+        return ratingsByUser;
     }
 }
