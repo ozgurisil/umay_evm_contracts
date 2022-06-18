@@ -93,6 +93,8 @@ contract Users is Ownable, ReentrancyGuard{
     event SetStatus(address indexed wallet, string userName, Statuses indexed status);
     event UserDeposit(address indexed _address, uint _amount, uint _balance);
     event UserWithdrawal(address indexed _address, uint _amount, uint _balance);
+    event RatingChange(address indexed wallet, uint countRating, uint averageRating);
+
     mapping (address => User) private users;
 
     mapping (bytes32 => Rating) public ratings;
@@ -198,6 +200,7 @@ contract Users is Ownable, ReentrancyGuard{
 
         users[_address].avgRating = (users[_address].avgRating * users[_address].cntRating + _rating) / (users[_address].cntRating + 1);
         users[_address].cntRating++;
+        emit RatingChange(_address, users[_address].cntRating, users[_address].avgRating);
     }
 
     function removeRating(address _address) external {
@@ -213,6 +216,8 @@ contract Users is Ownable, ReentrancyGuard{
         // Fix user's ratings
         users[_address].avgRating = (users[_address].avgRating * users[_address].cntRating - rating) / Math.max(users[_address].cntRating - 1, 1);
         users[_address].cntRating--;
+
+        emit RatingChange(_address, users[_address].cntRating, users[_address].avgRating);
     }
 
     function getRatingsByUser(bytes32 _start, uint _length) external view returns (Rating[] memory) {
