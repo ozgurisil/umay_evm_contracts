@@ -185,6 +185,11 @@ contract Users is Ownable, ReentrancyGuard{
         token.safeTransfer(_address, _amount);
     }
 
+    function callerCanCoverFees(address _caller, address _callee) public view returns (bool) {
+        if (users[_caller].depositBalance - users[_caller].blockedAmount >= users[_callee].fee) return true;
+        return false;
+    }
+
     function addRating(address _address, uint _rating) external {
         bytes32 hash = keccak256(abi.encodePacked(msg.sender, _address));
         require(_rating == 1000 || _rating == 2000 || _rating == 3000 || _rating == 4000 || _rating == 5000, 'Invalid rating');

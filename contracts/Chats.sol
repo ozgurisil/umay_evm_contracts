@@ -49,6 +49,7 @@ contract Chats is Ownable, ReentrancyGuard {
     function startChat(address _caller) external nonReentrant returns (bytes32) {
         IUsers users = IUsers(usersContract);
         require(users.getUserByAddress(msg.sender).currentChatId == '' && users.getUserByAddress(_caller).currentChatId == '', 'Cannot start a chat');
+        require(users.callerCanCoverFees(_caller, msg.sender), 'Caller funds not sufficient');
         uint fee = IUsers(usersContract).getUserFee(msg.sender);
         Chat memory chat = Chat(
             keccak256(abi.encodePacked(msg.sender, _caller, block.timestamp)),
@@ -76,6 +77,7 @@ contract Chats is Ownable, ReentrancyGuard {
         // CONSIDERATION: setChatId() might better be called here instead of startChat()
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, 0, msg.sender);
         IUsers users = IUsers(usersContract);
+        require(users.callerCanCoverFees(msg.sender, chat.callee), 'Caller funds not sufficient');
         users.blockDeposit(msg.sender, chat.fee);
     }
 
@@ -117,6 +119,7 @@ contract Chats is Ownable, ReentrancyGuard {
         emit ChatExtended(_id);
         // TODO: Handle the case in which the user doesn't have enough deposits
         IUsers users = IUsers(usersContract);
+        require(users.callerCanCoverFees(msg.sender, chat.callee), 'Caller funds not sufficient');
         users.blockDeposit(msg.sender, chat.fee);
     }
 

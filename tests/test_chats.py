@@ -67,15 +67,23 @@ def test_start_chat_fail_ongoing_chat(users, chats):
         chats.startChat(accounts[3], {'from': accounts[2]})
 
 
+def test_start_chat_fail_caller_not_enough_funds(users, chats):
+    with reverts():
+        chats.startChat(accounts[9], {'from': accounts[1]})
+
+
 def test_start_chat_fail_multiple_chats(users, chats):
     chats.startChat(accounts[2], {'from': accounts[1]})
     with reverts():
         chats.startChat(accounts[2], {'from': accounts[3]})
 
 
-def test_cancel_chat(users, chats):
+def test_cancel_chat(token, users, chats):
     tx = chats.startChat(accounts[2], {'from': accounts[1]})
     chats.cancelChat(tx.return_value, {'from': accounts[1]})
+    token.transfer(accounts[3], 500e18, {'from': accounts[0]})
+    token.approve(users.address, 10_000e18, {'from': accounts[3]})
+    users.deposit(250e18, {'from': accounts[3]})
     chats.startChat(accounts[3], {'from': accounts[1]})
 
 
@@ -232,6 +240,16 @@ def test_extend_chat_fail_not_enough_balance(users, chats, token):
     assert users.getUserByAddress(accounts[2])[6] == 200e18
     with reverts():
         chats.extendChat(chat_id, {'from': accounts[2]})
+
+
+def test_extend_chat_fail_caller_not_enough_funds(users, chats):
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chat_id = tx.return_value
+    chats.confirmChat(chat_id, {'from': accounts[2]}) # 100 Blocked
+    chats.extendChat(chat_id, {'from': accounts[2]})  # 100 Blocked
+    # Out of funds
+    with reverts():
+        chats.extendChat(chat_id, {'from': accounts[2]})  # 100 Blocked
 
 
 def test_require_users_not_on_a_call(users, chats):
