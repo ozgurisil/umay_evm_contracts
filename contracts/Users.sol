@@ -180,9 +180,11 @@ contract Users is Ownable, ReentrancyGuard{
         return blockedAmount - exclude;
     }
 
-    function claim(address _address, uint _amount) onlyBy(chatsContract) external {
+    function claim(address[] calldata _addresses, uint[] calldata _amounts) onlyBy(chatsContract) external {
         IERC20 token = IERC20(protocolTokenContract);
-        token.safeTransfer(_address, _amount);
+        for (uint8 i = 0; i < _addresses.length; i++) {
+            token.safeTransfer(_addresses[i], _amounts[i]);
+        }
     }
 
     function callerCanCoverFees(address _caller, address _callee) public view returns (bool) {

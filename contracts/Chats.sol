@@ -11,6 +11,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 contract Chats is Ownable, ReentrancyGuard {
     address public usersContract;
     address public protocolToken;
+    address public treasuryAddress;
+    uint8 public treasuryPct = 0;
     enum Statuses {
         pending,
         started,
@@ -40,6 +42,14 @@ contract Chats is Ownable, ReentrancyGuard {
 
     function setTokenAddress(address _address) external onlyOwner {
         protocolToken = _address;
+    }
+
+    function setTreasuryAddress(address _address) external onlyOwner {
+        treasuryAddress = _address;
+    }
+
+    function setTreasuryPct(uint8 _pct) external onlyOwner {
+        treasuryPct = _pct;
     }
 
     function getChatByID(bytes32 _id) public view returns (Chat memory) {
@@ -139,10 +149,18 @@ contract Chats is Ownable, ReentrancyGuard {
     function claimFee(bytes32 _id) public nonReentrant returns (uint) {
         uint feeToClaim = getUnclaimedFee(_id);
         Chat storage chat = chatsMapping[_id];
+        uint treasuryShare = feeToClaim * treasuryPct / 100;
+        uint feePayable = feeToClaim - treasuryShare;
         require(chat.status == Statuses.finished, 'Chat status is not "finished"');
         chat.status = Statuses.feeClaimed;
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, chat.endDateTime, msg.sender);
-        IUsers(usersContract).claim(chat.callee, feeToClaim);
+        address[] memory addresses = new address[](2);
+        addresses[0] = chat.callee;
+        addresses[1] = treasuryAddress;
+        uint[] memory amounts = new uint[](2);
+        amounts[0] = feePayable;
+        amounts[1] = treasuryShare;
+        IUsers(usersContract).claim(addresses, amounts);
         return feeToClaim;
     }
 

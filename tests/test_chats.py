@@ -39,6 +39,7 @@ def chats(users, token):
     users.setChatsAddress(chats.address)
     token.approve(users.address, 10_000e18, {'from': accounts[1]})
     token.approve(users.address, 10_000e18, {'from': accounts[2]})
+    chats.setTreasuryAddress(accounts[9])
     # users.deposit(250 * 10 ** 18, {'from': accounts[0]})
     users.deposit(250e18, {'from': accounts[1]})
     users.deposit(250e18, {'from': accounts[2]})
@@ -184,6 +185,24 @@ def test_claim_fee(users, chats, token):
     assert tx.events['ChatStatusChange']['status'] == 4  # feeClaimed
     assert token.balanceOf(accounts[1]) == 999_850e18
     assert token.balanceOf(accounts[2]) == 999_750e18
+    assert token.balanceOf(users.address) == 400e18
+
+
+def test_claim_fee_with_treasury_share(users, chats, token):
+    chats.setTreasuryPct(5)
+    tx = chats.startChat(accounts[2], {'from': accounts[1]})
+    chat_id = tx.return_value
+    chats.confirmChat(chat_id, {'from': accounts[2]})
+    chain.sleep(3600)
+    chain.mine()
+    chats.finishChat(chat_id, {'from': accounts[1]})
+    tx = chats.claimFee(chat_id, {'from': accounts[1]})
+    assert tx.events['ChatStatusChange']['status'] == 4  # feeClaimed
+    fee_payable = 100e18 * 0.95
+    treasury_share = 100e18 * 0.05
+    assert token.balanceOf(accounts[1]) == 999_750e18 + fee_payable
+    assert token.balanceOf(accounts[2]) == 999_750e18
+    assert token.balanceOf(accounts[9]) == treasury_share
     assert token.balanceOf(users.address) == 400e18
 
 
