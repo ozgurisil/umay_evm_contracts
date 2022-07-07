@@ -169,12 +169,12 @@ contract Users is Ownable, ReentrancyGuard{
         token.safeTransfer(msg.sender, _amount);
     }
 
-    function blockDeposit(address _address, uint _amount) onlyBy(chatsContract) external {
+    function lockDeposit(address _address, uint _amount) onlyBy(chatsContract) external {
         require(users[_address].depositBalance - users[_address].blockedAmount >= _amount, 'Not enough balance');
         users[_address].blockedAmount += _amount;
     }
 
-    function unblockDeposit(address _address, uint exclude) onlyBy (chatsContract) external returns (uint) {
+    function unlockDeposit(address _address, uint exclude) onlyBy (chatsContract) external returns (uint) {
         uint blockedAmount = users[_address].blockedAmount;
         users[_address].blockedAmount = exclude;
         return blockedAmount - exclude;

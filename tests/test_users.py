@@ -115,40 +115,40 @@ def test_withdraw_fail_not_enough_balance(users, token):
 
 def test_block_deposit(users, chats, token):
     users.deposit(500e18, {'from': accounts[1]})
-    users.blockDeposit(accounts[1], 300e18, {'from': chats.address})
+    users.lockDeposit(accounts[1], 300e18, {'from': chats.address})
     assert users.getUserByAddress(accounts[1])[6] == 300e18 # Blocked amount
 
 
 def test_fail_block_deposit_wrong_chats_address(users, chats, token):
     users.deposit(500e18, {'from': accounts[1]})
     with reverts():
-        users.blockDeposit(accounts[1], 300e18, {'from': accounts[1]})
+        users.lockDeposit(accounts[1], 300e18, {'from': accounts[1]})
     with reverts():
-        users.blockDeposit(accounts[1], 300e18, {'from': accounts[2]})
+        users.lockDeposit(accounts[1], 300e18, {'from': accounts[2]})
 
 
 def test_fail_block_deposit_not_enough_balance(users, chats, token):
     users.deposit(500e18, {'from': accounts[1]})
     with reverts():
-        users.blockDeposit(accounts[1], 1000e18, {'from': chats.address})
+        users.lockDeposit(accounts[1], 1000e18, {'from': chats.address})
 
 
 def test_unblock_deposit(users, chats, token):
     users.deposit(500e18, {'from': accounts[1]})
-    users.blockDeposit(accounts[1], 300e18, {'from': chats.address})
-    users.unblockDeposit(accounts[1], 0, {'from': chats.address})
+    users.lockDeposit(accounts[1], 300e18, {'from': chats.address})
+    users.unlockDeposit(accounts[1], 0, {'from': chats.address})
     assert users.getUserByAddress(accounts[1])[6] == 0 # Blocked amount
 
 
 def test_fail_unblock_deposit_wrong_chat_address(users, chats, token):
     users.deposit(500e18, {'from': accounts[1]})
     with reverts():
-        users.unblockDeposit(accounts[1], 0, {'from': accounts[1]})
+        users.unlockDeposit(accounts[1], 0, {'from': accounts[1]})
 
 
 def test_blocked_deposit_withdrawal(users, chats, token):
     users.deposit(10_000e18, {'from': accounts[1]})
-    users.blockDeposit(accounts[1], 5_000e18, {'from': chats.address})
+    users.lockDeposit(accounts[1], 5_000e18, {'from': chats.address})
     users.withdraw(3_000e18, {'from': accounts[1]})
     users.withdraw(2_000e18, {'from': accounts[1]})
     with reverts():

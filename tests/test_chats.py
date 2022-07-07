@@ -213,10 +213,10 @@ def test_unblock_deposit(users, chats, token):
     chain.sleep(1800)  # Half of the blocked deposit will be available to unblock
     chain.mine()
     with reverts():
-        chats.unblockDeposit(chat_id, {'from': accounts[1]})
+        chats.unlockDeposit(chat_id, {'from': accounts[1]})
     chats.finishChat(chat_id, {'from': accounts[1]})
     assert users.getUserByAddress(accounts[2])[6] == 100e18
-    tx = chats.unblockDeposit(chat_id, {'from': accounts[1]})
+    tx = chats.unlockDeposit(chat_id, {'from': accounts[1]})
     assert tx.return_value == 50e18 # Freed
     assert users.getUserByAddress(accounts[2])[6] == 50e18  # Still blocked -- claimable by callee
 

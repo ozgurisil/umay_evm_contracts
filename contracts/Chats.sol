@@ -88,7 +88,7 @@ contract Chats is Ownable, ReentrancyGuard {
         emit ChatStatusChange(chat.id, chat.status, chat.startDateTime, 0, msg.sender);
         IUsers users = IUsers(usersContract);
         require(users.callerCanCoverFees(msg.sender, chat.callee), 'Caller funds not sufficient');
-        users.blockDeposit(msg.sender, chat.fee);
+        users.lockDeposit(msg.sender, chat.fee);
     }
 
     function cancelChat(bytes32 _id) external nonReentrant {
@@ -130,7 +130,7 @@ contract Chats is Ownable, ReentrancyGuard {
         // TODO: Handle the case in which the user doesn't have enough deposits
         IUsers users = IUsers(usersContract);
         require(users.callerCanCoverFees(msg.sender, chat.callee), 'Caller funds not sufficient');
-        users.blockDeposit(msg.sender, chat.fee);
+        users.lockDeposit(msg.sender, chat.fee);
     }
 
     function getUnclaimedFee(bytes32 _id) public view returns (uint) {
@@ -164,10 +164,10 @@ contract Chats is Ownable, ReentrancyGuard {
         return feeToClaim;
     }
 
-    function unblockDeposit(bytes32 _id) external nonReentrant returns (uint) {
+    function unlockDeposit(bytes32 _id) external nonReentrant returns (uint) {
         Chat storage chat = chatsMapping[_id];
         require (chat.status == Statuses.finished || chat.status == Statuses.feeClaimed, 'Chat status is not "finished" or "feeClaimed"');
         uint feeToClaim = getUnclaimedFee(_id);
-        return IUsers(usersContract).unblockDeposit(chat.caller, feeToClaim);
+        return IUsers(usersContract).unlockDeposit(chat.caller, feeToClaim);
     }
 }
