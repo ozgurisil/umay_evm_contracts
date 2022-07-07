@@ -20,7 +20,7 @@ interface IUsers {
         statuses status;
         uint fee;
         uint depositBalance;
-        uint blockedAmount;
+        uint lockedAmount;
         bytes32 currentChatId;
     }
     function getUserFee (address _address) external returns (uint fee);

@@ -58,7 +58,7 @@ contract Users is Ownable, ReentrancyGuard{
         Statuses status;
         uint fee;
         uint depositBalance;
-        uint blockedAmount;
+        uint lockedAmount;
         bytes32 currentChatId;
         AreasOfInterest[] interests;
         string bio;
@@ -162,7 +162,7 @@ contract Users is Ownable, ReentrancyGuard{
     }
 
     function withdraw(uint _amount) external nonReentrant {
-        require(users[msg.sender].depositBalance - users[msg.sender].blockedAmount >= _amount, 'Not enough balance');
+        require(users[msg.sender].depositBalance - users[msg.sender].lockedAmount >= _amount, 'Not enough balance');
         users[msg.sender].depositBalance -= _amount;
         emit UserWithdrawal(msg.sender, _amount, users[msg.sender].depositBalance);
         IERC20 token = IERC20(protocolTokenContract);
@@ -170,14 +170,14 @@ contract Users is Ownable, ReentrancyGuard{
     }
 
     function lockDeposit(address _address, uint _amount) onlyBy(chatsContract) external {
-        require(users[_address].depositBalance - users[_address].blockedAmount >= _amount, 'Not enough balance');
-        users[_address].blockedAmount += _amount;
+        require(users[_address].depositBalance - users[_address].lockedAmount >= _amount, 'Not enough balance');
+        users[_address].lockedAmount += _amount;
     }
 
     function unlockDeposit(address _address, uint exclude) onlyBy (chatsContract) external returns (uint) {
-        uint blockedAmount = users[_address].blockedAmount;
-        users[_address].blockedAmount = exclude;
-        return blockedAmount - exclude;
+        uint lockedAmount = users[_address].lockedAmount;
+        users[_address].lockedAmount = exclude;
+        return lockedAmount - exclude;
     }
 
     function claim(address[] calldata _addresses, uint[] calldata _amounts) onlyBy(chatsContract) external {
@@ -188,7 +188,7 @@ contract Users is Ownable, ReentrancyGuard{
     }
 
     function callerCanCoverFees(address _caller, address _callee) public view returns (bool) {
-        if (users[_caller].depositBalance - users[_caller].blockedAmount >= users[_callee].fee) return true;
+        if (users[_caller].depositBalance - users[_caller].lockedAmount >= users[_callee].fee) return true;
         return false;
     }
 

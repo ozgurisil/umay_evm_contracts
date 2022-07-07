@@ -210,7 +210,7 @@ def test_unblock_deposit(users, chats, token):
     tx = chats.startChat(accounts[2], {'from': accounts[1]})
     chat_id = tx.return_value
     chats.confirmChat(chat_id, {'from': accounts[2]})
-    chain.sleep(1800)  # Half of the blocked deposit will be available to unblock
+    chain.sleep(1800)  # Half of the locked deposit will be available to unblock
     chain.mine()
     with reverts():
         chats.unlockDeposit(chat_id, {'from': accounts[1]})
@@ -218,7 +218,7 @@ def test_unblock_deposit(users, chats, token):
     assert users.getUserByAddress(accounts[2])[6] == 100e18
     tx = chats.unlockDeposit(chat_id, {'from': accounts[1]})
     assert tx.return_value == 50e18 # Freed
-    assert users.getUserByAddress(accounts[2])[6] == 50e18  # Still blocked -- claimable by callee
+    assert users.getUserByAddress(accounts[2])[6] == 50e18  # Still locked -- claimable by callee
 
 
 def test_extend_chat(users, chats, token):
