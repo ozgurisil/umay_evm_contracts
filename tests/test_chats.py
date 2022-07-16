@@ -1,6 +1,6 @@
 import pytest
 
-from brownie import Users, Chats, ChatToken, accounts, reverts
+from brownie import Users, Chats, ChatToken, NFT, accounts, reverts
 from brownie.network.state import Chain
 from brownie.test import given, strategy
 
@@ -31,15 +31,31 @@ def token(users):
 
 
 @pytest.fixture(scope='module')
-def chats(users, token):
+def nft(NFT, users, token):
+    nft = accounts[0].deploy(NFT)
+    nft.setTreasuryAddress(accounts[9])
+    nft.setStableCoinAddress(token.address)
+    nft.setCost(25e18)
+    return nft
+
+
+@pytest.fixture(scope='module')
+def chats(users, nft, token):
     chats = accounts[0].deploy(Chats)
     chats.setUsersContractAddress(users.address)
     chats.setTokenAddress(token.address)
     users.setTokenAddress(token.address)
     users.setChatsAddress(chats.address)
-    token.approve(users.address, 10_000e18, {'from': accounts[1]})
-    token.approve(users.address, 10_000e18, {'from': accounts[2]})
+    token.approve(users.address, 10_025e18, {'from': accounts[1]})
+    token.approve(users.address, 10_025e18, {'from': accounts[2]})
     chats.setTreasuryAddress(accounts[9])
+
+    token.approve(nft.address, nft.cost(), {'from': accounts[1]})
+    token.approve(nft.address, nft.cost(), {'from': accounts[2]})
+    chats.setNftAddress(nft.address)
+    nft.safeMint({'from': accounts[1]})
+    nft.safeMint({'from': accounts[2]})
+
     # users.deposit(250 * 10 ** 18, {'from': accounts[0]})
     users.deposit(250e18, {'from': accounts[1]})
     users.deposit(250e18, {'from': accounts[2]})
@@ -79,12 +95,14 @@ def test_start_chat_fail_multiple_chats(users, chats):
         chats.startChat(accounts[2], {'from': accounts[3]})
 
 
-def test_cancel_chat(token, users, chats):
+def test_cancel_chat(token, users, nft, chats):
     tx = chats.startChat(accounts[2], {'from': accounts[1]})
     chats.cancelChat(tx.return_value, {'from': accounts[1]})
     token.transfer(accounts[3], 500e18, {'from': accounts[0]})
     token.approve(users.address, 10_000e18, {'from': accounts[3]})
     users.deposit(250e18, {'from': accounts[3]})
+    token.approve(nft.address, nft.cost(), {'from': accounts[3]})
+    nft.safeMint({'from': accounts[3]})
     chats.startChat(accounts[3], {'from': accounts[1]})
 
 
@@ -171,8 +189,8 @@ def test_unclaimed_fee(users,  chats, value):
 
 def test_claim_fee(users, chats, token):
     assert token.balanceOf(users.address) == 500e18
-    assert token.balanceOf(accounts[1]) == 999_750e18
-    assert token.balanceOf(accounts[2]) == 999_750e18
+    assert token.balanceOf(accounts[1]) == 999_725e18
+    assert token.balanceOf(accounts[2]) == 999_725e18
     tx = chats.startChat(accounts[2], {'from': accounts[1]})
     chat_id = tx.return_value
     chats.confirmChat(chat_id, {'from': accounts[2]})
@@ -183,8 +201,8 @@ def test_claim_fee(users, chats, token):
     chats.finishChat(chat_id, {'from': accounts[1]})
     tx = chats.claimFee(chat_id, {'from': accounts[1]})
     assert tx.events['ChatStatusChange']['status'] == 4  # feeClaimed
-    assert token.balanceOf(accounts[1]) == 999_850e18
-    assert token.balanceOf(accounts[2]) == 999_750e18
+    assert token.balanceOf(accounts[1]) == 999_825e18
+    assert token.balanceOf(accounts[2]) == 999_725e18
     assert token.balanceOf(users.address) == 400e18
 
 
@@ -200,9 +218,9 @@ def test_claim_fee_with_treasury_share(users, chats, token):
     assert tx.events['ChatStatusChange']['status'] == 4  # feeClaimed
     fee_payable = 100e18 * 0.95
     treasury_share = 100e18 * 0.05
-    assert token.balanceOf(accounts[1]) == 999_750e18 + fee_payable
-    assert token.balanceOf(accounts[2]) == 999_750e18
-    assert token.balanceOf(accounts[9]) == treasury_share
+    assert token.balanceOf(accounts[1]) == 999_725e18 + fee_payable
+    assert token.balanceOf(accounts[2]) == 999_725e18
+    assert token.balanceOf(accounts[9]) == treasury_share + 50e18  # NFT income
     assert token.balanceOf(users.address) == 400e18
 
 
