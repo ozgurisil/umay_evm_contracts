@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "../interfaces/IUsers.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
@@ -12,6 +13,7 @@ contract Chats is Ownable, ReentrancyGuard {
     address public usersContract;
     address public protocolToken;
     address public treasuryAddress;
+    address public nftAddress;
     uint8 public treasuryPct = 0;
     enum Statuses {
         pending,
@@ -56,10 +58,16 @@ contract Chats is Ownable, ReentrancyGuard {
         return chatsMapping[_id];
     }
 
+    function setNftAddress(address _address) external onlyOwner {
+        nftAddress = _address;
+    }
+
     function startChat(address _caller) external nonReentrant returns (bytes32) {
         IUsers users = IUsers(usersContract);
         require(users.getUserByAddress(msg.sender).currentChatId == '' && users.getUserByAddress(_caller).currentChatId == '', 'Cannot start a chat');
         require(users.callerCanCoverFees(_caller, msg.sender), 'Caller funds not sufficient');
+        IERC721 nft = IERC721(nftAddress);
+        require(nft.balanceOf(msg.sender) > 0 && nft.balanceOf(_caller) > 0, 'NFTs for both users required');
         uint fee = IUsers(usersContract).getUserFee(msg.sender);
         Chat memory chat = Chat(
             keccak256(abi.encodePacked(msg.sender, _caller, block.timestamp)),
