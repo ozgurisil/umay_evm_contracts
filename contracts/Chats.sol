@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract Chats is Ownable, ReentrancyGuard {
     address public usersContract;
-    address public protocolToken;
     address public treasuryAddress;
     address public nftAddress;
     uint8 public treasuryPct = 0;
@@ -40,10 +39,6 @@ contract Chats is Ownable, ReentrancyGuard {
 
     function setUsersContractAddress (address _address) external onlyOwner {
         usersContract = _address;
-    }
-
-    function setTokenAddress(address _address) external onlyOwner {
-        protocolToken = _address;
     }
 
     function setTreasuryAddress(address _address) external onlyOwner {
