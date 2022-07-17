@@ -16,7 +16,7 @@ contract Users is Ownable, ReentrancyGuard{
         _;
     }
 
-    address public protocolTokenContract;
+    address public stableCoinContract;
     address public chatsContract;
     enum Genders {
         unknown,
@@ -103,8 +103,8 @@ contract Users is Ownable, ReentrancyGuard{
         return users[_address];
     }
 
-    function setTokenAddress(address _address) external onlyOwner {
-        protocolTokenContract = _address;
+    function setStableCoinAddress(address _address) external onlyOwner {
+        stableCoinContract = _address;
     }
 
     function setChatsAddress(address _address) external onlyOwner {
@@ -154,7 +154,7 @@ contract Users is Ownable, ReentrancyGuard{
     }
 
     function deposit(uint _amount) external nonReentrant {
-        IERC20 token = IERC20(protocolTokenContract);
+        IERC20 token = IERC20(stableCoinContract);
         require(token.balanceOf(msg.sender) >= _amount, 'Not enought balance');
         users[msg.sender].depositBalance += _amount;
         emit UserDeposit(msg.sender, _amount, users[msg.sender].depositBalance);
@@ -165,7 +165,7 @@ contract Users is Ownable, ReentrancyGuard{
         require(users[msg.sender].depositBalance - users[msg.sender].lockedAmount >= _amount, 'Not enough balance');
         users[msg.sender].depositBalance -= _amount;
         emit UserWithdrawal(msg.sender, _amount, users[msg.sender].depositBalance);
-        IERC20 token = IERC20(protocolTokenContract);
+        IERC20 token = IERC20(stableCoinContract);
         token.safeTransfer(msg.sender, _amount);
     }
 
@@ -181,7 +181,7 @@ contract Users is Ownable, ReentrancyGuard{
     }
 
     function claim(address[] calldata _addresses, uint[] calldata _amounts) onlyBy(chatsContract) external {
-        IERC20 token = IERC20(protocolTokenContract);
+        IERC20 token = IERC20(stableCoinContract);
         for (uint8 i = 0; i < _addresses.length; i++) {
             token.safeTransfer(_addresses[i], _amounts[i]);
         }

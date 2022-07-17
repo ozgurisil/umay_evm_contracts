@@ -43,7 +43,7 @@ def nft(NFT, users, token):
 def chats(users, nft, token):
     chats = accounts[0].deploy(Chats)
     chats.setUsersContractAddress(users.address)
-    users.setTokenAddress(token.address)
+    users.setStableCoinAddress(token.address)
     users.setChatsAddress(chats.address)
     token.approve(users.address, 10_025e18, {'from': accounts[1]})
     token.approve(users.address, 10_025e18, {'from': accounts[2]})

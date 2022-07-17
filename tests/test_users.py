@@ -32,7 +32,7 @@ def token(users):
     token.approve(users.address, 10_000e18, {'from': accounts[2]})
     token.transfer(accounts[1], 1_000_000e18, {'from': accounts[0]})
     token.transfer(accounts[2], 1_000_000e18, {'from': accounts[0]})
-    users.setTokenAddress(token.address)
+    users.setStableCoinAddress(token.address)
     return token
 
 
